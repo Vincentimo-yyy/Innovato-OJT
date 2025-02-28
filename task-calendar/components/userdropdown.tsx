@@ -1,45 +1,25 @@
 "use client";
 import React from "react";
-import {
-  Dropdown,
-  DropdownTrigger,
-  DropdownMenu,
-  DropdownItem,
-  Avatar,
-} from "@heroui/react";
+import { Avatar } from "@heroui/react";
+
+import { DropdownIcon } from "./icons";
 
 export default function DropdownComponent() {
   return (
-    <div className="flex items-center gap-4 p-4">
-      <Dropdown placement="bottom-end">
-        <DropdownTrigger>
-          <Avatar
-            isBordered
-            as="button"
-            className="transition-transform"
-            src="https://i.pravatar.cc/150?u=a042581f4e29026704d"
-          />
-        </DropdownTrigger>
-        <DropdownMenu variant="flat">
-          <DropdownItem
-            key="profile"
-            className="h-14 gap-2 font-[arial] text-[12px]"
-          >
-            <p className="font-semibold">Signed in as</p>
-            <p className="font-semibold">xyz@gmail.com</p>
-          </DropdownItem>
-          <DropdownItem key="settings" className="text-[12px] font-[arial]">
-            Add account
-          </DropdownItem>
-          <DropdownItem
-            key="logout"
-            className="text-[12px] font-[arial]"
-            color="danger"
-          >
-            Log Out
-          </DropdownItem>
-        </DropdownMenu>
-      </Dropdown>
+    <div className="flex items-center pr-6 pt-4">
+      {/* Shared hover effect container */}
+      <div className="flex items-center gap-2 hover:bg-gray-300 transition p-2 rounded-xl">
+        {/* Dropdown Icon (Left) */}
+        <div className="w-12 h-12 flex items-center justify-center rounded-xl">
+          <DropdownIcon />
+        </div>
+        {/* Avatar (Right) */}
+        <Avatar
+          showFallback
+          className="w-[50px] h-[50px]"
+          src="https://images.unsplash.com/broken"
+        />
+      </div>
     </div>
   );
 }
