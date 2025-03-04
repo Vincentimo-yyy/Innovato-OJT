@@ -13,7 +13,7 @@ export default function Header() {
       <div className="relative flex items-center w-[200px]">
         {/* Menu Button */}
         <button
-          className="absolute z-30 w-[50px] h-[50px] flex items-center justify-center rounded-xl bg-gray-200 hover:bg-gray-300 transition-transform duration-500"
+          className="absolute z-30 w-[45px] h-[45px] flex items-center justify-center rounded-xl bg-gray-200 hover:bg-gray-300 transition-transform duration-500"
           style={{ transform: isOpen ? "rotate(90deg)" : "rotate(0deg)" }}
           onClick={() => setIsOpen(!isOpen)}
         >

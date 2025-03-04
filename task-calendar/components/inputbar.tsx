@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 
 import { SubmitIcon } from "./icons";
-import { roboto } from "./fonts";
+import { inter } from "./fonts";
 
 export default function InputBar() {
   const [inputValue, setInputValue] = useState("");
@@ -21,14 +21,14 @@ export default function InputBar() {
   return (
     <div className="flex items-center gap-1">
       <input
-        className={`${roboto.className} w-[255px] border border-gray-600 pl-5 py-3 rounded-full`}
+        className={`${inter.className} w-[207px] h-[45px] border border-gray-600 pl-5 py-2 rounded-full`}
         placeholder="Enter text here"
         type="text"
         value={inputValue}
         onChange={handleChange}
       />
       <button
-        className="w-10 h-10 flex items-center justify-center rounded-full"
+        className="w-8 h-9 flex items-center justify-center rounded-full hover:-rotate-45 transition-transform duration-500"
         onClick={handleSubmit}
       >
         <SubmitIcon />
