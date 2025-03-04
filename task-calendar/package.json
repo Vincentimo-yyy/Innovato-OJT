@@ -9,6 +9,7 @@
   "lint": "eslint . --ext .ts,.tsx -c .eslintrc.json --fix"
  },
  "dependencies": {
+  "@headlessui/react": "^2.2.0",
   "@heroui/button": "2.2.13",
   "@heroui/code": "2.2.10",
   "@heroui/input": "2.4.13",
