@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+
 import DropdownComponent from "./userdropdown";
 import { MenuIcon } from "./icons";
 
@@ -43,7 +44,6 @@ export default function Header() {
           3
         </button>
       </div>
-
       <DropdownComponent />
     </header>
   );

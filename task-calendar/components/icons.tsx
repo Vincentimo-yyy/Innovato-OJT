@@ -58,7 +58,7 @@ export const DropdownIcon = ({
 };
 
 export const AddIcon = ({
-  fill = "white", // White icon for contrast
+  fill = "white ", // White icon for contrast
   ...props
 }) => {
   return (

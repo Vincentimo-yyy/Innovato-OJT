@@ -59,7 +59,7 @@ export default function BorderBox() {
           onOpenChange={onOpenChange}
         >
           <ModalContent>
-            <ModalHeader className={`${roboto.className} w-full`}>
+            <ModalHeader className={`${roboto.className}`}>
               <div className="flex w-[125px] flex-wrap md:flex-nowrap gap-4">
                 <Select className={`max-w-xs`} label="Type of Task">
                   {taskTypes.map((taskTypes) => (

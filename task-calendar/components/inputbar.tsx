@@ -13,6 +13,7 @@ export default function InputBar() {
   };
 
   const handleSubmit = () => {
+    // wala pa ginagawa dito XD
     // eslint-disable-next-line no-console
     console.log("Submitted:", inputValue);
   };
