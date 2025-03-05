@@ -4,12 +4,13 @@ import { useState } from "react";
 
 import DropdownComponent from "./userdropdown";
 import { MenuIcon } from "./icons";
+import Clock from "./clock";
 
 export default function Header() {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <header className="flex items-center justify-between pl-7 border-gray-300">
+    <header className="flex items-center justify-between border-gray-300 px-5">
       <div className="relative flex items-center w-[200px]">
         {/* Menu Button */}
         <button
@@ -44,7 +45,14 @@ export default function Header() {
           3
         </button>
       </div>
-      <DropdownComponent />
+      <div className="flex-1 flex justify-left pl-20">
+        <Clock />
+      </div>
+
+      {/* Right Side: Dropdown */}
+      <div className="ml-auto">
+        <DropdownComponent />
+      </div>
     </header>
   );
 }

@@ -9,10 +9,18 @@ import {
   Select,
   SelectItem,
   Input,
+  Checkbox,
 } from "@heroui/react";
 
 import { TaskCard } from "./task-card";
-import { AddIcon, SubmitIcon } from "./icons";
+import {
+  AddIcon,
+  SubmitIcon,
+  ExpandIcon,
+  ArchiveIcon,
+  DeleteIcon,
+} from "./icons";
+import { CustomModal } from "./custom-modal";
 
 export const taskTypes = [
   { label: "Low", key: "low", color: "bg-green-400" },
@@ -30,17 +38,55 @@ export interface Task {
 interface BorderBoxProps {
   tasks: Task[];
   onAddTask: (task: Omit<Task, "id">) => void;
+  onDeleteTasks: (updatedTasks: Task[]) => void;
 }
 
-export default function BorderBox({ tasks, onAddTask }: BorderBoxProps) {
-  const { isOpen, onOpen, onOpenChange } = useDisclosure();
+export default function BorderBox({
+  tasks,
+  onAddTask,
+  onDeleteTasks,
+}: BorderBoxProps) {
+  const {
+    isOpen: isAddTaskOpen,
+    onOpen: onAddTaskOpen,
+    onOpenChange: onAddTaskOpenChange,
+  } = useDisclosure();
+  const [isExpandedOpen, setIsExpandedOpen] = useState(false);
   const [taskDetails, setTaskDetails] = useState("");
   const [taskTitle, setTaskTitle] = useState("");
   const [taskPriority, setTaskPriority] = useState(taskTypes[0].key);
+  const [isHovered, setIsHovered] = useState(false);
+  const [selectedTasks, setSelectedTasks] = useState<string[]>([]);
+
+  const toggleSelectAll = () => {
+    if (selectedTasks.length === tasks.length) {
+      setSelectedTasks([]); // Unselect all
+    } else {
+      setSelectedTasks(tasks.map((task) => task.id)); // Select all
+    }
+  };
+
+  const toggleTaskSelection = (taskId: string) => {
+    setSelectedTasks(
+      (prevSelected) =>
+        prevSelected.includes(taskId)
+          ? prevSelected.filter((id) => id !== taskId) // Unselect
+          : [...prevSelected, taskId], // Select
+    );
+  };
+
+  const deleteSelectedTasks = () => {
+    const updatedTasks = tasks.filter(
+      (task) => !selectedTasks.includes(task.id),
+    );
+
+    setSelectedTasks([]); // Clear selection after deletion
+    onDeleteTasks(updatedTasks); // Pass new list to parent
+  };
 
   // Function to add new task
   const addTask = () => {
-    if (!taskTitle.trim()) return; // Don't allow empty tasks
+    if (!taskTitle.trim()) return; // Check if title is empty, pass
 
     // Get priority color
     const taskType =
@@ -57,12 +103,21 @@ export default function BorderBox({ tasks, onAddTask }: BorderBoxProps) {
     setTaskTitle("");
     setTaskDetails("");
     setTaskPriority(taskTypes[0].key);
-    onOpenChange();
+    onAddTaskOpenChange();
   };
 
   return (
     <div className="px-6">
       <div className="w-[240px] border-2 border-gray-300 shadow-md rounded-lg p-4 relative h-[550px]">
+        <div
+          className="absolute top-2 right-2"
+          onMouseEnter={() => setIsHovered(true)}
+          onMouseLeave={() => setIsHovered(false)}
+        >
+          <button onClick={() => setIsExpandedOpen(true)}>
+            <ExpandIcon fillOpacity={isHovered ? "1" : "0.5"} />
+          </button>
+        </div>
         <p
           className={`text-center text-[24px] text-gray-700 border-b-2 border-gray-300 pb-2`}
         >
@@ -70,32 +125,36 @@ export default function BorderBox({ tasks, onAddTask }: BorderBoxProps) {
         </p>
 
         {/* Task List */}
-        <div className="space-y-1 mt-1 overflow-y-auto max-h-[420px]">
+        <div className="space-y-1 mt-1 overflow-y-auto max-h-[420px] truncate">
           {tasks.map((task) => (
             <TaskCard
               key={task.id}
               color={task.color}
               id={task.id}
               taskDetails={task.details}
-              taskTitle={task.title}
+              taskTitle={
+                task.title.split(" ").length > 2
+                  ? task.title.split(" ").slice(0, 2).join(" ") + "..."
+                  : task.title
+              }
             />
           ))}
         </div>
 
         {/* Add Task Button */}
         <button
-          className="w-12 h-12 bg-gray-500 rounded-full flex items-center justify-center hover:bg-green-600 absolute bottom-5 right-5"
-          onClick={onOpen}
+          className="w-10 h-10 bg-gray-500 rounded-full flex items-center justify-center hover:bg-green-600 absolute bottom-5 right-5"
+          onClick={onAddTaskOpen}
         >
           <AddIcon />
         </button>
 
-        {/* Modal */}
+        {/* Add Task Modal */}
         <Modal
-          isOpen={isOpen}
+          isOpen={isAddTaskOpen}
           placement="top-center"
-          size="2xl"
-          onOpenChange={onOpenChange}
+          size="xl"
+          onOpenChange={onAddTaskOpenChange}
         >
           <ModalContent>
             <ModalBody>
@@ -112,7 +171,7 @@ export default function BorderBox({ tasks, onAddTask }: BorderBoxProps) {
                 </Select>
               </div>
               <Input
-                className="w-[300px]"
+                className="w-full"
                 label="Task Title"
                 placeholder="Enter Title"
                 type="Title"
@@ -128,15 +187,69 @@ export default function BorderBox({ tasks, onAddTask }: BorderBoxProps) {
               />
               <div className="flex justify-end ">
                 <button
-                  className="w-[40px] h-[40px] rounded-full flex items-center"
+                  className="w-[25px] h-[25px] rounded-full flex items-center hover:-rotate-45 transition-transform duration-500"
                   onClick={addTask}
                 >
-                  <SubmitIcon height="35" width="35" />
+                  <SubmitIcon height="25" width="25" />
                 </button>
               </div>
             </ModalBody>
           </ModalContent>
         </Modal>
+
+        <CustomModal
+          isOpen={isExpandedOpen}
+          onClose={() => setIsExpandedOpen(false)}
+        >
+          <div className="flex flex-col w-[40vw] h-[80vh]">
+            {/* Title Section - FIXED */}
+            <h2 className="text-xl font-semibold border-b-2 pb-2">
+              List of Tasks
+            </h2>
+
+            {/* Scrollable Task List */}
+            <div className="flex-1 overflow-y-auto px-4 mt-2">
+              <div className="pt-4 flex space-x-2 items-center">
+                <Checkbox
+                  isSelected={selectedTasks.length === tasks.length}
+                  radius="none"
+                  onChange={toggleSelectAll}
+                />
+                <button>
+                  <ArchiveIcon />
+                </button>
+                <button onClick={deleteSelectedTasks}>
+                  <DeleteIcon />
+                </button>
+              </div>
+
+              {/* Task List */}
+              <div className="pt-4">
+                {tasks.map((task) => (
+                  <div key={task.id} className="flex items-center mb-2">
+                    <Checkbox
+                      isSelected={selectedTasks.includes(task.id)}
+                      radius="none"
+                      onChange={() => toggleTaskSelection(task.id)}
+                    />
+                    <TaskCard
+                      className=""
+                      color={task.color}
+                      height="100px"
+                      id={task.id}
+                      taskDetails={task.details}
+                      taskDetailsClassName="block"
+                      taskTitle={task.title}
+                      taskTitleClassName="font-semibold"
+                      taskWrapper="w-full"
+                      width="530px"
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </CustomModal>
       </div>
     </div>
   );

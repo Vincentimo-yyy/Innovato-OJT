@@ -1,11 +1,14 @@
 "use client";
 
 import React, { useState } from "react";
-
 import { SubmitIcon } from "./icons";
 import { inter } from "./fonts";
 
-export default function InputBar() {
+interface InputBarProps {
+  onAddTask: (task: { title: string; details: string; color: string }) => void;
+}
+
+export default function InputBar({ onAddTask }: InputBarProps) {
   const [inputValue, setInputValue] = useState("");
 
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -13,9 +16,17 @@ export default function InputBar() {
   };
 
   const handleSubmit = () => {
-    // wala pa ginagawa dito XD
-    // eslint-disable-next-line no-console
-    console.log("Submitted:", inputValue);
+    if (!inputValue.trim()) return; // Prevent empty input
+
+    const newTask = {
+      title: "...",
+      details: inputValue,
+      color: "bg-white", // Default color for no priority
+    };
+
+    onAddTask(newTask); // Call the function passed from BorderBox
+
+    setInputValue(""); // Clear input after adding task
   };
 
   return (

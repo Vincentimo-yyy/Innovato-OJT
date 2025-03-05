@@ -35,22 +35,30 @@ export default function LandingPage() {
     setTasks([...tasks, newTask]);
   };
 
+  const handleDeleteTasks = (updatedTasks: Task[]) => {
+    setTasks(updatedTasks); // Update the tasks state
+  };
+
   const handleTaskDrop = (taskId: string, day: string, hour: number) => {
-    const task = tasks.find((t) => t.id === taskId);
+    const existingScheduledTaskIndex = scheduledTasks.findIndex(
+      (st) => st.taskId === taskId,
+    );
 
-    if (!task) return;
-
-    const existingSchedule = scheduledTasks.find((st) => st.taskId === taskId);
-
-    if (existingSchedule) {
+    if (existingScheduledTaskIndex !== -1) {
+      // Task is already scheduled, just update its position
       setScheduledTasks(
-        scheduledTasks.map((st) =>
-          st.taskId === taskId ? { ...st, day, hour } : st,
+        scheduledTasks.map((st, index) =>
+          index === existingScheduledTaskIndex ? { ...st, day, hour } : st,
         ),
       );
     } else {
-      setScheduledTasks([...scheduledTasks, { taskId, day, hour, task }]);
-      setTasks(tasks.filter((t) => t.id !== taskId));
+      // Task is coming from the BorderBox
+      const task = tasks.find((t) => t.id === taskId);
+
+      if (task) {
+        setScheduledTasks([...scheduledTasks, { taskId, day, hour, task }]);
+        setTasks(tasks.filter((t) => t.id !== taskId));
+      }
     }
   };
 
@@ -71,9 +79,13 @@ export default function LandingPage() {
       <Header />
       <div className="flex pt-2 w-full pr-5">
         <div className="flex flex-col">
-          <BorderBox tasks={tasks} onAddTask={handleAddTask} />
+          <BorderBox
+            tasks={tasks}
+            onAddTask={handleAddTask}
+            onDeleteTasks={handleDeleteTasks}
+          />
           <div className="pt-2 pl-6">
-            <InputBar />
+            <InputBar onAddTask={handleAddTask} />
           </div>
         </div>
         <BorderlessBox

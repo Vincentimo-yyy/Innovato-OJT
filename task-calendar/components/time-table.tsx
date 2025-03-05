@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 "use client";
 import type React from "react";
 import type { Task } from "./borderbox";
@@ -48,13 +49,12 @@ export default function BorderlessBox({
         onTaskDrop(task.id, day, hour);
       }
     } catch (error) {
-      // eslint-disable-next-line no-console
       console.error("Error parsing dropped task:", error);
     }
   };
 
-  const findScheduledTask = (day: string, hour: number) => {
-    return scheduledTasks.find(
+  const findScheduledTasks = (day: string, hour: number) => {
+    return scheduledTasks.filter(
       (scheduledTask) =>
         scheduledTask.day === day && scheduledTask.hour === hour,
     );
@@ -74,11 +74,11 @@ export default function BorderlessBox({
               {Array.from({ length: 24 }, (_, i) => {
                 const hour = i + 1;
                 const period = hour < 12 ? "AM" : hour === 12 ? "NN" : "PM";
-                const scheduledTask = findScheduledTask(day, hour);
+                const scheduledTasks = findScheduledTasks(day, hour);
 
                 return (
                   <div
-                    key={i}
+                    key={`${day}-${hour}`}
                     className="border-t border-gray-300 text-[12px] text-gray-700 px-4 py-3 min-h-[60px] relative transition-colors"
                     onDragLeave={handleDragLeave}
                     onDragOver={handleDragOver}
@@ -88,22 +88,42 @@ export default function BorderlessBox({
                       {hour <= 12 ? hour : hour - 12}:00 {period}
                     </div>
 
-                    {scheduledTask && (
-                      <div
-                        className={`${scheduledTask.task.color} rounded-md p-2 mt-1 shadow-md text-white flex justify-between items-center`}
-                      >
-                        <p className="font-medium text-xs truncate">
-                          {scheduledTask.task.title}
-                        </p>
-                        <button
-                          aria-label="Retract task"
-                          className="p-1 rounded-full bg-white/20 hover:bg-white/30 transition-colors"
-                          onClick={() => onRetractTask(scheduledTask.taskId)}
+                    <div className="flex flex-col space-y-1 mt-1">
+                      {scheduledTasks.map((scheduledTask) => (
+                        <div
+                          key={scheduledTask.taskId}
+                          draggable
+                          className={`${scheduledTask.task.color} rounded-md p-2 shadow-md text-white flex justify-between items-center cursor-move`}
+                          onDragStart={(e) => {
+                            e.stopPropagation();
+                            e.dataTransfer.setData(
+                              "application/json",
+                              JSON.stringify({
+                                id: scheduledTask.taskId,
+                                title: scheduledTask.task.title,
+                                details: scheduledTask.task.details,
+                                color: scheduledTask.task.color,
+                              }),
+                            );
+                            e.dataTransfer.effectAllowed = "move";
+                          }}
                         >
-                          <ArrowLeft size={12} />
-                        </button>
-                      </div>
-                    )}
+                          <p className="font-medium text-xs truncate">
+                            {scheduledTask.task.title}
+                          </p>
+                          <button
+                            aria-label="Retract task"
+                            className="p-1 rounded-full bg-white/20 hover:bg-white/30 transition-colors"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onRetractTask(scheduledTask.taskId);
+                            }}
+                          >
+                            <ArrowLeft size={12} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 );
               })}
