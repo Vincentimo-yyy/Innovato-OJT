@@ -1,11 +1,17 @@
 "use client";
 
 import React, { useState } from "react";
+
 import { SubmitIcon } from "./icons";
 import { inter } from "./fonts";
 
 interface InputBarProps {
-  onAddTask: (task: { title: string; details: string; color: string }) => void;
+  onAddTask: (task: {
+    title: string;
+    details: string;
+    color: string;
+    priority: string;
+  }) => void;
 }
 
 export default function InputBar({ onAddTask }: InputBarProps) {
@@ -21,7 +27,8 @@ export default function InputBar({ onAddTask }: InputBarProps) {
     const newTask = {
       title: "...",
       details: inputValue,
-      color: "bg-white", // Default color for no priority
+      color: "bg-white",
+      priority: "no priority",
     };
 
     onAddTask(newTask); // Call the function passed from BorderBox
@@ -32,7 +39,7 @@ export default function InputBar({ onAddTask }: InputBarProps) {
   return (
     <div className="flex items-center gap-1">
       <input
-        className={`${inter.className} w-[207px] h-[45px] border border-gray-600 pl-5 py-2 rounded-full`}
+        className={`${inter.className} w-[267px] h-[45px] border border-gray-600 pl-5 py-2 rounded-full`}
         placeholder="Enter text here"
         type="text"
         value={inputValue}

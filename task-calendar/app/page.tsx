@@ -1,5 +1,6 @@
+/* eslint-disable no-console */
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 import BorderBox, { type Task } from "@/components/borderbox";
 import Header from "@/components/header";
@@ -17,6 +18,20 @@ export default function LandingPage() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [scheduledTasks, setScheduledTasks] = useState<ScheduledTask[]>([]);
   const [taskIdCounter, setTaskIdCounter] = useState(0);
+  const fetchTasks = async () => {
+    try {
+      const res = await fetch("/api/tasks_data");
+      const data = await res.json();
+
+      setTasks(data);
+    } catch (err) {
+      console.error("Failed to fetch tasks:", err);
+    }
+  };
+
+  useEffect(() => {
+    fetchTasks();
+  }, []);
 
   const generateId = () => {
     const newId = `task-${Date.now()}-${taskIdCounter}`;
@@ -26,13 +41,25 @@ export default function LandingPage() {
     return newId;
   };
 
-  const handleAddTask = (taskData: Omit<Task, "id">) => {
-    const newTask: Task = {
-      ...taskData,
+  const handleAddTask = async (taskData: Omit<Task, "id">) => {
+    const taskdb: Task = {
       id: generateId(),
+      ...taskData,
     };
 
-    setTasks([...tasks, newTask]);
+    try {
+      const res = await fetch("/api/tasks_data", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(taskdb),
+      });
+
+      const newTask = await res.json();
+
+      setTasks([...tasks, newTask]);
+    } catch (err) {
+      console.error("Failed to add task:", err);
+    }
   };
 
   const handleDeleteTasks = (updatedTasks: Task[]) => {

@@ -32,6 +32,7 @@ export interface Task {
   id: string;
   title: string;
   details: string;
+  priority: string;
   color: string;
 }
 
@@ -97,6 +98,7 @@ export default function BorderBox({
       title: taskTitle,
       details: taskDetails,
       color: taskType.color,
+      priority: taskType.key,
     });
 
     // Reset fields & close modal
@@ -108,7 +110,7 @@ export default function BorderBox({
 
   return (
     <div className="px-6">
-      <div className="w-[240px] border-2 border-gray-300 shadow-md rounded-lg p-4 relative h-[550px]">
+      <div className="w-[300px] border-2 border-gray-300 shadow-md rounded-lg p-4 relative h-[550px]">
         <div
           className="absolute top-2 right-2"
           onMouseEnter={() => setIsHovered(true)}

@@ -23,8 +23,8 @@ export function TaskCard({
   taskTitleClassName = "text-center truncate",
   color,
   className = "",
-  width = "190px",
-  height = "auto",
+  width = "240px",
+  height = "50px",
 }: TaskCardProps) {
   const handleDragStart = (e: React.DragEvent) => {
     e.dataTransfer.setData(
