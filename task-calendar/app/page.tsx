@@ -68,6 +68,22 @@ export default function LandingPage() {
     setTasks(updatedTasks); // Update the tasks state
   };
 
+  function extractHours(timeRange: string): {
+    startHour: number;
+    endHour: number;
+  } {
+    const match = timeRange.match(/^(\d+):\d+\s*-\s*(\d+):\d+/);
+
+    if (!match) {
+      throw new Error("Invalid time range format");
+    }
+
+    const startHour = parseInt(match[1], 10);
+    const endHour = parseInt(match[2], 10);
+
+    return { startHour, endHour };
+  }
+
   const handleTaskDrop = (
     taskId: string,
     day: string,
@@ -146,8 +162,25 @@ export default function LandingPage() {
     );
   };
 
-  const handleRetractTask = (taskId: string) => {
+  const handleRetractTask = async (taskId: string) => {
     const scheduledTask = scheduledTasks.find((st) => st.taskId === taskId);
+    const taskData = { id: taskId, day: null, time_range: null };
+
+    try {
+      const response = await fetch("/api/tasks_data", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(taskData),
+      });
+
+      const result = await response.json();
+
+      console.log("Server Response:", result);
+    } catch (error) {
+      console.error("Error updating task:", error);
+    }
 
     if (!scheduledTask) return;
 

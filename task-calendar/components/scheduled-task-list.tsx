@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 "use client";
 import type React from "react";
 import type { Task } from "./borderbox";
@@ -47,32 +46,19 @@ export function ScheduledTaskList({
     if (!resizing || !currentTask.current) return;
 
     const handleMouseMove = (e: MouseEvent) => {
-      console.log(`🖱️ Mouse Move Event Detected at Y=${e.pageY}`);
-
       const deltaY = e.pageY - startY.current;
 
-      console.log(`📏 Delta Y: ${deltaY}px, Start Y: ${startY.current}px`);
-
       const newHeight = Math.max(52, startHeight.current + deltaY);
-
-      console.log(
-        `📏 New Height: ${newHeight}px, Start Height: ${startHeight.current}px`,
-      );
-
       // Calculate how many hours to add based on the height change
       const hourDelta = Math.floor((newHeight - 52) / 60);
       const newEndHour = currentTask.current!.startHour + 1 + hourDelta;
 
-      console.log(`🕒 Hour Delta: ${hourDelta}, New End Hour: ${newEndHour}`);
-
       if (newEndHour !== currentTask.current!.endHour) {
-        console.log(`🔄 Updating Task ${resizing} End Hour: ${newEndHour}`);
         onTaskResize(resizing, newEndHour);
       }
     };
 
     const handleMouseUp = () => {
-      console.log(`✅ Mouse Up - Ending Resize`);
       setResizing(null);
       currentTask.current = null;
     };
@@ -89,11 +75,7 @@ export function ScheduledTaskList({
   }, [resizing, onTaskResize]);
 
   const handleResizeStart = (e: React.MouseEvent, task: ScheduledTask) => {
-    console.log(`🔥 Resize Start: Task ID - ${task.taskId}, Event - ${e.type}`);
-
     if (!task?.taskId) {
-      console.error("🚨 Task ID is missing!");
-
       return;
     }
 
@@ -108,7 +90,6 @@ export function ScheduledTaskList({
 
     if (element) {
       startHeight.current = element.getBoundingClientRect().height;
-      console.log(`📏 Initial Height: ${startHeight.current}px`);
     }
 
     // Set the resizing state last to trigger the effect
@@ -117,19 +98,15 @@ export function ScheduledTaskList({
 
   // Keyboard handling for accessibility
   const handleKeyDown = (e: React.KeyboardEvent, task: ScheduledTask) => {
-    console.log(`⌨️ Key Pressed: ${e.key}`);
-
     if (e.key === "ArrowDown") {
       e.preventDefault();
       const newEndHour = task.endHour + 1;
 
-      console.log(`⬇️ Increasing Task ${task.taskId} End Hour: ${newEndHour}`);
       onTaskResize(task.taskId, newEndHour);
     } else if (e.key === "ArrowUp") {
       e.preventDefault();
       const newEndHour = Math.max(task.startHour + 1, task.endHour - 1);
 
-      console.log(`⬆️ Decreasing Task ${task.taskId} End Hour: ${newEndHour}`);
       onTaskResize(task.taskId, newEndHour);
     }
   };

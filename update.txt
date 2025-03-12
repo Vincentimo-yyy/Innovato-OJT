@@ -2,3 +2,5 @@
 limit task schedule to 1
 resize handles extend time
 scrollable task box
+delete task
+

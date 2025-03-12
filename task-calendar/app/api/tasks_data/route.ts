@@ -30,7 +30,7 @@ export async function GET() {
 // POST: Add a new task
 export async function POST(req: Request) {
   try {
-    const { title, priority, details, color } = await req.json();
+    const { id, title, priority, details, color } = await req.json();
 
     if (!title || !priority || !details || !color) {
       return NextResponse.json(
@@ -39,10 +39,8 @@ export async function POST(req: Request) {
       );
     }
 
-    const id = `task-${Date.now()}`; // Generating a unique ID
-
     await db.query(
-      "INSERT INTO tasks_Data (id, title, priority, details, color) VALUES (?, ?, ?, ?, ?)",
+      "INSERT INTO tasks_data (id, title, priority, details, color) VALUES (?, ?, ?, ?, ?)",
       [id, title, priority, details, color],
     );
 
@@ -85,9 +83,9 @@ export async function PUT(req: Request) {
   try {
     const { id, day, time_range } = await req.json();
 
-    if (!id || !day || !time_range) {
+    if (!id) {
       return NextResponse.json(
-        { error: "Task ID, day, and time_range are required" },
+        { error: "Task ID are required" },
         { status: 400 },
       );
     }
@@ -101,9 +99,6 @@ export async function PUT(req: Request) {
   } catch (error) {
     console.error("DB Error:", error);
 
-    return NextResponse.json(
-      { error: "Failed to update task" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: { error } }, { status: 500 });
   }
 }
