@@ -10,7 +10,8 @@ import InputBar from "@/components/inputbar";
 interface ScheduledTask {
   taskId: string;
   day: string;
-  hour: number;
+  startHour: number;
+  endHour: number;
   task: Task;
 }
 
@@ -18,6 +19,7 @@ export default function LandingPage() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [scheduledTasks, setScheduledTasks] = useState<ScheduledTask[]>([]);
   const [taskIdCounter, setTaskIdCounter] = useState(0);
+
   const fetchTasks = async () => {
     try {
       const res = await fetch("/api/tasks_data");
@@ -66,16 +68,39 @@ export default function LandingPage() {
     setTasks(updatedTasks); // Update the tasks state
   };
 
-  const handleTaskDrop = (taskId: string, day: string, hour: number) => {
+  const handleTaskDrop = (
+    taskId: string,
+    day: string,
+    startHour: number,
+    endHour: number,
+  ) => {
     const existingScheduledTaskIndex = scheduledTasks.findIndex(
       (st) => st.taskId === taskId,
     );
+
+    // Check if any time slot in the range is already occupied by another task
+    const isRangeOccupied = scheduledTasks.some(
+      (task) =>
+        task.taskId !== taskId && // Don't check against itself
+        task.day === day &&
+        ((task.startHour <= startHour && task.endHour > startHour) || // Overlaps with start
+          (task.startHour < endHour && task.endHour >= endHour) || // Overlaps with end
+          (task.startHour >= startHour && task.endHour <= endHour)), // Contained within
+    );
+
+    if (isRangeOccupied) {
+      console.log("Cannot place task: time slot(s) already occupied");
+
+      return;
+    }
 
     if (existingScheduledTaskIndex !== -1) {
       // Task is already scheduled, just update its position
       setScheduledTasks(
         scheduledTasks.map((st, index) =>
-          index === existingScheduledTaskIndex ? { ...st, day, hour } : st,
+          index === existingScheduledTaskIndex
+            ? { ...st, day, startHour, endHour }
+            : st,
         ),
       );
     } else {
@@ -83,10 +108,42 @@ export default function LandingPage() {
       const task = tasks.find((t) => t.id === taskId);
 
       if (task) {
-        setScheduledTasks([...scheduledTasks, { taskId, day, hour, task }]);
+        setScheduledTasks([
+          ...scheduledTasks,
+          { taskId, day, startHour, endHour, task },
+        ]);
         setTasks(tasks.filter((t) => t.id !== taskId));
       }
     }
+  };
+
+  const handleTaskResize = (taskId: string, newEndHour: number) => {
+    const task = scheduledTasks.find((t) => t.taskId === taskId);
+
+    if (!task) return;
+
+    // Check if the new size would overlap with other tasks
+    const isRangeOccupied = scheduledTasks.some(
+      (t) =>
+        t.taskId !== taskId && // Don't check against itself
+        t.day === task.day &&
+        t.startHour < newEndHour &&
+        t.startHour >= task.startHour + 1,
+    );
+
+    if (isRangeOccupied) {
+      console.log("Cannot resize task: would overlap with another task");
+
+      return;
+    }
+
+    setScheduledTasks((prev) =>
+      prev.map((t) =>
+        t.taskId === taskId
+          ? { ...t, endHour: Math.max(t.startHour + 1, newEndHour) }
+          : t,
+      ),
+    );
   };
 
   const handleRetractTask = (taskId: string) => {
@@ -111,7 +168,7 @@ export default function LandingPage() {
             onAddTask={handleAddTask}
             onDeleteTasks={handleDeleteTasks}
           />
-          <div className="pt-2 pl-6">
+          <div className="pt-4 pl-6">
             <InputBar onAddTask={handleAddTask} />
           </div>
         </div>
@@ -119,6 +176,7 @@ export default function LandingPage() {
           scheduledTasks={scheduledTasks}
           onRetractTask={handleRetractTask}
           onTaskDrop={handleTaskDrop}
+          onTaskResize={handleTaskResize}
         />
       </div>
     </div>

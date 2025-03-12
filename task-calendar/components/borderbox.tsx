@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 "use client";
 import { useState } from "react";
 import {
@@ -75,14 +76,39 @@ export default function BorderBox({
           : [...prevSelected, taskId], // Select
     );
   };
+  const deleteTask = async (taskId: string) => {
+    try {
+      const res = await fetch("/api/tasks_data", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: taskId }),
+      });
 
-  const deleteSelectedTasks = () => {
-    const updatedTasks = tasks.filter(
-      (task) => !selectedTasks.includes(task.id),
-    );
+      if (!res.ok) throw new Error("Failed to delete task");
 
-    setSelectedTasks([]); // Clear selection after deletion
-    onDeleteTasks(updatedTasks); // Pass new list to parent
+      const data = await res.json();
+
+      console.log(data.message);
+    } catch (error) {
+      console.error("Error deleting task:", error);
+    }
+  };
+
+  const deleteSelectedTasks = async () => {
+    try {
+      // Delete each task from the server
+      await Promise.all(selectedTasks.map((taskId) => deleteTask(taskId)));
+
+      // Update local state after deletion
+      const updatedTasks = tasks.filter(
+        (task) => !selectedTasks.includes(task.id),
+      );
+
+      setSelectedTasks([]); // Clear selection
+      onDeleteTasks(updatedTasks); // Pass new list to parent
+    } catch (error) {
+      console.error("Error deleting selected tasks:", error);
+    }
   };
 
   // Function to add new task
@@ -110,7 +136,7 @@ export default function BorderBox({
 
   return (
     <div className="px-6">
-      <div className="w-[300px] border-2 border-gray-300 shadow-md rounded-lg p-4 relative h-[550px]">
+      <div className="w-[300px] border-2 border-gray-300 shadow-md rounded-lg p-4 relative h-[620px]">
         <div
           className="absolute top-2 right-2"
           onMouseEnter={() => setIsHovered(true)}
@@ -127,7 +153,7 @@ export default function BorderBox({
         </p>
 
         {/* Task List */}
-        <div className="space-y-1 mt-1 overflow-y-auto max-h-[420px] truncate">
+        <div className="space-y-1 mt-1 overflow-y-auto overflow-x-hidden max-h-[500px] scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-200">
           {tasks.map((task) => (
             <TaskCard
               key={task.id}
@@ -210,7 +236,7 @@ export default function BorderBox({
             </h2>
 
             {/* Scrollable Task List */}
-            <div className="flex-1 overflow-y-auto px-4 mt-2">
+            <div className="flex-1 overflow-y-auto  px-4 mt-2">
               <div className="pt-4 flex space-x-2 items-center">
                 <Checkbox
                   isSelected={selectedTasks.length === tasks.length}

@@ -79,3 +79,31 @@ export async function DELETE(req: Request) {
     );
   }
 }
+
+// PUT: Update a task by ID
+export async function PUT(req: Request) {
+  try {
+    const { id, day, time_range } = await req.json();
+
+    if (!id || !day || !time_range) {
+      return NextResponse.json(
+        { error: "Task ID, day, and time_range are required" },
+        { status: 400 },
+      );
+    }
+
+    await db.query(
+      "UPDATE tasks_data SET day = ?, time_range = ? WHERE id = ?",
+      [day, time_range, id],
+    );
+
+    return NextResponse.json({ message: "Task schedule updated successfully" });
+  } catch (error) {
+    console.error("DB Error:", error);
+
+    return NextResponse.json(
+      { error: "Failed to update task" },
+      { status: 500 },
+    );
+  }
+}
