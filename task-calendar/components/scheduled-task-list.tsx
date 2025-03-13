@@ -7,6 +7,7 @@ import { ArrowLeft } from "lucide-react";
 
 interface ScheduledTask {
   taskId: string;
+  category?: string; // Added category to display in the UI
   day: string;
   startHour: number;
   endHour: number;
@@ -111,11 +112,26 @@ export function ScheduledTaskList({
     }
   };
 
+  // Get category badge color
+  const getCategoryColor = (category?: string) => {
+    switch (category) {
+      case "home":
+        return "bg-blue-200 text-blue-800";
+      case "work":
+        return "bg-purple-200 text-purple-800";
+      case "school":
+        return "bg-yellow-200 text-yellow-800";
+      default:
+        return "bg-gray-200 text-gray-800";
+    }
+  };
+
   return (
     <div className="flex flex-col space-y-1 mt-1">
       {scheduledTasks.map((scheduledTask) => {
         const duration = scheduledTask.endHour - scheduledTask.startHour;
         const height = duration > 1 ? `${duration * 60 - 8}px` : "auto";
+        const categoryColor = getCategoryColor(scheduledTask.category);
 
         return (
           <div
@@ -144,9 +160,18 @@ export function ScheduledTaskList({
             }}
           >
             <div className="flex justify-between items-start">
-              <p className="font-medium text-xs truncate">
-                {scheduledTask.task.title}
-              </p>
+              <div className="flex flex-col">
+                <p className="font-medium text-xs truncate">
+                  {scheduledTask.task.title}
+                </p>
+                {scheduledTask.category && (
+                  <span
+                    className={`text-[10px] px-1 rounded mt-1 inline-block ${categoryColor}`}
+                  >
+                    {scheduledTask.category}
+                  </span>
+                )}
+              </div>
               <button
                 aria-label="Retract task"
                 className="p-1 rounded-full bg-white/20 hover:bg-white/30 transition-colors"

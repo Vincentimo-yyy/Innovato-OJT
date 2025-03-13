@@ -3,11 +3,33 @@
 import { useState } from "react";
 
 import DropdownComponent from "./userdropdown";
-import { MenuIcon } from "./icons";
+import {
+  MenuIcon,
+  AddIcon,
+  OptionsIcon,
+  HomeIcon,
+  WorkIcon,
+  SchoolIcon,
+} from "./icons";
 import Clock from "./clock";
 
-export default function Header() {
+// Define the type for menu categories
+export type TaskCategory = "home" | "school" | "work";
+
+interface HeaderProps {
+  activeCategory: TaskCategory;
+  onCategoryChange: (category: TaskCategory) => void;
+}
+
+export default function Header({
+  activeCategory,
+  onCategoryChange,
+}: HeaderProps) {
   const [isOpen, setIsOpen] = useState(false);
+
+  const handleCategoryClick = (category: TaskCategory) => {
+    onCategoryChange(category);
+  };
 
   return (
     <header className="flex items-center justify-between border-gray-300 px-5">
@@ -23,26 +45,50 @@ export default function Header() {
 
         {/* Buttons with Sliding Effect */}
         <button
-          className={`absolute z-20 w-[40px] h-[40px] flex items-center justify-center rounded-full bg-green-700 hover:bg-gray-300 transition-transform duration-500`}
-          style={{ transform: isOpen ? "translateX(60px)" : "translateX(0px)" }}
+          className={`absolute z-20 w-[40px] h-[40px] flex items-center justify-center rounded-full ${activeCategory === "home" ? "bg-blue-200" : "bg-gray-200"} hover:bg-gray-300 transition-transform duration-500`}
+          style={{ transform: isOpen ? "translateX(50px)" : "translateX(0px)" }}
+          title="Home Tasks"
+          onClick={() => handleCategoryClick("home")}
         >
-          1
+          <HomeIcon />
         </button>
         <button
-          className={`absolute z-10 w-[40px] h-[40px] flex items-center justify-center rounded-full bg-orange-500 hover:bg-gray-300 transition-transform duration-500`}
+          className={`absolute z-20 w-[40px] h-[40px] flex items-center justify-center rounded-full ${activeCategory === "school" ? "bg-blue-200" : "bg-gray-200"} hover:bg-gray-300 transition-transform duration-500`}
           style={{
-            transform: isOpen ? "translateX(120px)" : "translateX(0px)",
+            transform: isOpen ? "translateX(100px)" : "translateX(0px)",
           }}
+          title="School Tasks"
+          onClick={() => handleCategoryClick("school")}
         >
-          2
+          <SchoolIcon />
         </button>
         <button
-          className={`absolute z-0 w-[40px] h-[40px] flex items-center justify-center rounded-full bg-red-600 hover:bg-gray-300 transition-transform duration-500`}
+          className={`absolute z-20 w-[40px] h-[40px] flex items-center justify-center rounded-full ${activeCategory === "work" ? "bg-blue-200" : "bg-gray-200"} hover:bg-gray-300 transition-transform duration-500`}
           style={{
-            transform: isOpen ? "translateX(180px)" : "translateX(0px)",
+            transform: isOpen ? "translateX(150px)" : "translateX(0px)",
           }}
+          title="Work Tasks"
+          onClick={() => handleCategoryClick("work")}
         >
-          3
+          <WorkIcon />
+        </button>
+        <button
+          className={`absolute z-20 w-[40px] h-[40px] flex items-center justify-center rounded-full bg-gray-200 hover:bg-gray-300 transition-transform duration-500`}
+          style={{
+            transform: isOpen ? "translateX(200px)" : "translateX(0px)",
+          }}
+          title="Add Category"
+        >
+          <AddIcon className="w-7 h-7" fill="black" />
+        </button>
+        <button
+          className={`absolute z-10 w-[40px] h-[40px] flex items-center justify-center rounded-full bg-gray-200 hover:bg-gray-300 transition-transform duration-500`}
+          style={{
+            transform: isOpen ? "translateX(250px)" : "translateX(0px)",
+          }}
+          title="Options"
+        >
+          <OptionsIcon />
         </button>
       </div>
       <div className="flex-1 flex justify-left pl-32">

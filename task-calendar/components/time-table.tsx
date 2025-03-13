@@ -3,12 +3,13 @@
 import type React from "react";
 import type { Task } from "./borderbox";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 
 import { ScheduledTaskList } from "./scheduled-task-list";
 
 interface ScheduledTask {
   taskId: string;
+  category?: string; // Added category to display in the UI
   day: string;
   startHour: number;
   endHour: number;
@@ -49,6 +50,33 @@ export default function BorderlessBox({
     day: string;
     hour: number;
   } | null>(null);
+
+  // Add this near the top of the component, after other useState declarations
+  const [containerHeight, setContainerHeight] = useState("calc(100vh - 120px)");
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Add this useEffect to handle resize and initial sizing
+  useEffect(() => {
+    const handleResize = () => {
+      if (containerRef.current) {
+        const headerHeight = 80; // Approximate header height
+        const safetyMargin = 40; // Extra margin to account for bookmarks bar and other browser UI
+        const availableHeight =
+          window.innerHeight - headerHeight - safetyMargin;
+
+        setContainerHeight(`${availableHeight}px`);
+      }
+    };
+
+    // Initial calculation
+    handleResize();
+
+    // Add event listener for window resize
+    window.addEventListener("resize", handleResize);
+
+    // Cleanup
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -176,7 +204,11 @@ export default function BorderlessBox({
   };
 
   return (
-    <div className="w-full border-t border-gray-300 overflow-y-auto max-h-[calc(100vh-80px)] bg-white">
+    <div
+      ref={containerRef}
+      className="w-full border-t border-gray-300 overflow-y-auto bg-white"
+      style={{ maxHeight: containerHeight }}
+    >
       <div className="grid grid-cols-3 divide-x divide-gray-300">
         {days.map(({ day, date }) => (
           <div key={date} className="flex flex-col">
