@@ -45,7 +45,7 @@ export default function Header() {
           3
         </button>
       </div>
-      <div className="flex-1 flex justify-left pl-20">
+      <div className="flex-1 flex justify-left pl-32">
         <Clock />
       </div>
 

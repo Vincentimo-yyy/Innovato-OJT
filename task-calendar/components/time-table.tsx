@@ -60,35 +60,6 @@ export default function BorderlessBox({
     setDropError(null);
   };
 
-  const updateTaskSchedule = async (
-    id: string,
-    day: string,
-    startHour: number,
-    endHour: number,
-  ) => {
-    const formattedTaskData = {
-      id,
-      day,
-      time_range: `${startHour}:00 - ${endHour}:00`,
-    };
-
-    try {
-      const response = await fetch("/api/tasks_data", {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(formattedTaskData),
-      });
-
-      const result = await response.json();
-
-      console.log("Server Response:", result);
-    } catch (error) {
-      console.error("Error updating task:", error);
-    }
-  };
-
   // Check if a time slot is occupied
   const isTimeSlotOccupied = (day: string, hour: number, taskId?: string) => {
     return scheduledTasks.some(
@@ -116,7 +87,7 @@ export default function BorderlessBox({
     return true;
   };
 
-  const handleDrop = async (e: React.DragEvent, day: string, hour: number) => {
+  const handleDrop = (e: React.DragEvent, day: string, hour: number) => {
     e.preventDefault();
     e.currentTarget.classList.remove("bg-gray-100");
 
@@ -136,10 +107,7 @@ export default function BorderlessBox({
           return;
         }
 
-        // Call function to update task in the database
-        await updateTaskSchedule(task.id, day, hour, endHour);
-
-        // Update UI state
+        // Update UI state directly without database call
         onTaskDrop(task.id, day, hour, endHour);
       }
     } catch (error) {

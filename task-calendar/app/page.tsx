@@ -15,24 +15,39 @@ interface ScheduledTask {
   task: Task;
 }
 
+// Predefined tasks
+const initialTasks: Task[] = [
+  {
+    id: "task-1",
+    title: "Complete Project",
+    priority: "high",
+    details: "Finish the project documentation and submit for review",
+    color: "bg-red-600",
+  },
+  {
+    id: "task-2",
+    title: "Team Meeting",
+    priority: "medium",
+    details: "Weekly team sync to discuss progress and blockers",
+    color: "bg-orange-400",
+  },
+  {
+    id: "task-3",
+    title: "Research",
+    priority: "low",
+    details: "Research new technologies for upcoming sprint",
+    color: "bg-green-400",
+  },
+];
+
 export default function LandingPage() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [scheduledTasks, setScheduledTasks] = useState<ScheduledTask[]>([]);
-  const [taskIdCounter, setTaskIdCounter] = useState(0);
+  const [taskIdCounter, setTaskIdCounter] = useState(4); // Start from 4 since we have 3 initial tasks
 
-  const fetchTasks = async () => {
-    try {
-      const res = await fetch("/api/tasks_data");
-      const data = await res.json();
-
-      setTasks(data);
-    } catch (err) {
-      console.error("Failed to fetch tasks:", err);
-    }
-  };
-
+  // Initialize tasks on component mount
   useEffect(() => {
-    fetchTasks();
+    setTasks(initialTasks);
   }, []);
 
   const generateId = () => {
@@ -43,46 +58,18 @@ export default function LandingPage() {
     return newId;
   };
 
-  const handleAddTask = async (taskData: Omit<Task, "id">) => {
-    const taskdb: Task = {
+  const handleAddTask = (taskData: Omit<Task, "id">) => {
+    const newTask: Task = {
       id: generateId(),
       ...taskData,
     };
 
-    try {
-      const res = await fetch("/api/tasks_data", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(taskdb),
-      });
-
-      const newTask = await res.json();
-
-      setTasks([...tasks, newTask]);
-    } catch (err) {
-      console.error("Failed to add task:", err);
-    }
+    setTasks([...tasks, newTask]);
   };
 
   const handleDeleteTasks = (updatedTasks: Task[]) => {
-    setTasks(updatedTasks); // Update the tasks state
+    setTasks(updatedTasks);
   };
-
-  function extractHours(timeRange: string): {
-    startHour: number;
-    endHour: number;
-  } {
-    const match = timeRange.match(/^(\d+):\d+\s*-\s*(\d+):\d+/);
-
-    if (!match) {
-      throw new Error("Invalid time range format");
-    }
-
-    const startHour = parseInt(match[1], 10);
-    const endHour = parseInt(match[2], 10);
-
-    return { startHour, endHour };
-  }
 
   const handleTaskDrop = (
     taskId: string,
@@ -162,25 +149,8 @@ export default function LandingPage() {
     );
   };
 
-  const handleRetractTask = async (taskId: string) => {
+  const handleRetractTask = (taskId: string) => {
     const scheduledTask = scheduledTasks.find((st) => st.taskId === taskId);
-    const taskData = { id: taskId, day: null, time_range: null };
-
-    try {
-      const response = await fetch("/api/tasks_data", {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(taskData),
-      });
-
-      const result = await response.json();
-
-      console.log("Server Response:", result);
-    } catch (error) {
-      console.error("Error updating task:", error);
-    }
 
     if (!scheduledTask) return;
 

@@ -76,39 +76,15 @@ export default function BorderBox({
           : [...prevSelected, taskId], // Select
     );
   };
-  const deleteTask = async (taskId: string) => {
-    try {
-      const res = await fetch("/api/tasks_data", {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: taskId }),
-      });
 
-      if (!res.ok) throw new Error("Failed to delete task");
+  const deleteSelectedTasks = () => {
+    // Update local state after deletion
+    const updatedTasks = tasks.filter(
+      (task) => !selectedTasks.includes(task.id),
+    );
 
-      const data = await res.json();
-
-      console.log(data.message);
-    } catch (error) {
-      console.error("Error deleting task:", error);
-    }
-  };
-
-  const deleteSelectedTasks = async () => {
-    try {
-      // Delete each task from the server
-      await Promise.all(selectedTasks.map((taskId) => deleteTask(taskId)));
-
-      // Update local state after deletion
-      const updatedTasks = tasks.filter(
-        (task) => !selectedTasks.includes(task.id),
-      );
-
-      setSelectedTasks([]); // Clear selection
-      onDeleteTasks(updatedTasks); // Pass new list to parent
-    } catch (error) {
-      console.error("Error deleting selected tasks:", error);
-    }
+    setSelectedTasks([]); // Clear selection
+    onDeleteTasks(updatedTasks); // Pass new list to parent
   };
 
   // Function to add new task
@@ -136,7 +112,10 @@ export default function BorderBox({
 
   return (
     <div className="px-6">
-      <div className="w-[300px] border-2 border-gray-300 shadow-md rounded-lg p-4 relative h-[620px]">
+      <div
+        className="w-[300px] border-2 border-gray-300 shadow-md rounded-lg p-4 relative"
+        style={{ height: "calc(103vh - 180px)" }}
+      >
         <div
           className="absolute top-2 right-2"
           onMouseEnter={() => setIsHovered(true)}
@@ -146,26 +125,35 @@ export default function BorderBox({
             <ExpandIcon fillOpacity={isHovered ? "1" : "0.5"} />
           </button>
         </div>
-        <p
-          className={`text-center text-[24px] text-gray-700 border-b-2 border-gray-300 pb-2`}
-        >
+        <p className="text-center text-[24px] text-gray-700 border-b-2 border-gray-300 pb-2">
           Task
         </p>
 
         {/* Task List */}
-        <div className="space-y-1 mt-1 overflow-y-auto overflow-x-hidden max-h-[500px] scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-200">
+        <div
+          className="space-y-1 mt-1 overflow-y-auto overflow-x-hidden"
+          style={{ maxHeight: "calc(100% - 80px)" }}
+        >
           {tasks.map((task) => (
-            <TaskCard
-              key={task.id}
-              color={task.color}
-              id={task.id}
-              taskDetails={task.details}
-              taskTitle={
-                task.title.split(" ").length > 2
-                  ? task.title.split(" ").slice(0, 2).join(" ") + "..."
-                  : task.title
-              }
-            />
+            <div key={task.id} className="flex flex-row">
+              <TaskCard
+                color={task.color}
+                id={task.id}
+                taskDetails={task.details}
+                taskTitle={
+                  task.title.split(" ").length > 2
+                    ? task.title.split(" ").slice(0, 2).join(" ") + "..."
+                    : task.title
+                }
+              />
+              <button
+                onClick={() =>
+                  onDeleteTasks(tasks.filter((t) => t.id !== task.id))
+                }
+              >
+                <DeleteIcon />
+              </button>
+            </div>
           ))}
         </div>
 
