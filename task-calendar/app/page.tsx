@@ -1,6 +1,6 @@
 /* eslint-disable no-console */
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
 import BorderBox, { type Task } from "@/components/borderbox";
 import Header, { type TaskCategory } from "@/components/header";
@@ -118,33 +118,30 @@ const initialCategoryTasksData: Record<TaskCategory, TaskWithSchedule[]> = {
 };
 
 export default function LandingPage() {
-  // Active category state
   const [activeCategory, setActiveCategory] = useState<TaskCategory>("home");
 
-  // All tasks data - this is our single source of truth
   const [allTasksData, setAllTasksData] = useState<
     Record<TaskCategory, TaskWithSchedule[]>
   >(JSON.parse(JSON.stringify(initialCategoryTasksData)));
 
-  // Current category's unscheduled tasks (for display in the task list)
   const [unscheduledTasks, setUnscheduledTasks] = useState<TaskWithSchedule[]>(
     [],
   );
 
-  // All scheduled tasks across all categories (for display in the timetable)
   const [timetableTasks, setTimetableTasks] = useState<TimetableTask[]>([]);
 
-  // Task ID counter for generating unique IDs
   const [taskIdCounter, setTaskIdCounter] = useState(4);
 
-  // Update displayed tasks whenever active category or all tasks data changes
+  // Add a ref to access the BorderBox component's methods
+  const borderBoxRef = useRef<{ openModalWithTimeEdit: () => void } | null>(
+    null,
+  );
+
   useEffect(() => {
-    // Get unscheduled tasks for the current category
     setUnscheduledTasks(
       allTasksData[activeCategory].filter((task) => !task.isScheduled),
     );
 
-    // Get all scheduled tasks from all categories
     const scheduledTasks: TimetableTask[] = [];
 
     Object.entries(allTasksData).forEach(([, tasks]) => {
@@ -176,7 +173,6 @@ export default function LandingPage() {
     setTimetableTasks(scheduledTasks);
   }, [activeCategory, allTasksData]);
 
-  // Generate a unique task ID
   const generateTaskId = () => {
     const newId = `${activeCategory}-task-${Date.now()}-${taskIdCounter}`;
 
@@ -185,12 +181,18 @@ export default function LandingPage() {
     return newId;
   };
 
-  // Handle category change
   const handleCategoryChange = (category: TaskCategory) => {
     setActiveCategory(category);
   };
 
-  // Add a new task
+  // Add a function to handle task editing
+  const handleEditTask = () => {
+    if (borderBoxRef.current) {
+      borderBoxRef.current.openModalWithTimeEdit();
+    }
+  };
+
+  // function for Add a task
   const handleAddTask = (taskData: Omit<Task, "id">) => {
     const newTask: TaskWithSchedule = {
       id: generateTaskId(),
@@ -199,10 +201,10 @@ export default function LandingPage() {
       category: activeCategory,
     };
 
-    // Add to local unscheduled tasks
+    // store it in unscheduled task by default
     setUnscheduledTasks((prev) => [...prev, newTask]);
 
-    // Add to all tasks data
+    // add to main database
     setAllTasksData((prev) => ({
       ...prev,
       [activeCategory]: [...prev[activeCategory], newTask],
@@ -244,14 +246,14 @@ export default function LandingPage() {
     // Check if task is already in timetable
     const existingTask = timetableTasks.find((tt) => tt.taskId === taskId);
 
-    // Check if time slot is available
+    // time slot lock
     const isTimeSlotOccupied = timetableTasks.some(
       (task) =>
-        task.taskId !== taskId && // Don't check against itself
+        task.taskId !== taskId &&
         task.day === day &&
-        ((task.startHour <= startHour && task.endHour > startHour) || // Overlaps with start
-          (task.startHour < endHour && task.endHour >= endHour) || // Overlaps with end
-          (task.startHour >= startHour && task.endHour <= endHour)), // Contained within
+        ((task.startHour <= startHour && task.endHour > startHour) ||
+          (task.startHour < endHour && task.endHour >= endHour) ||
+          (task.startHour >= startHour && task.endHour <= endHour)),
     );
 
     if (isTimeSlotOccupied) {
@@ -261,11 +263,10 @@ export default function LandingPage() {
     }
 
     if (existingTask) {
-      // Task is already scheduled, just update its position
+      // ability to move task that are scheduled
       setAllTasksData((prev) => {
         const newData = { ...prev };
 
-        // Find the task in its category and update it
         const categoryTasks = [...newData[existingTask.category]];
         const taskIndex = categoryTasks.findIndex((t) => t.id === taskId);
 
@@ -283,11 +284,9 @@ export default function LandingPage() {
         return newData;
       });
     } else {
-      // Find which category the task belongs to
       let taskCategory: TaskCategory | null = null;
       let taskToSchedule: TaskWithSchedule | null = null;
 
-      // Look through all categories to find the task
       Object.entries(allTasksData).forEach(([category, tasks]) => {
         const task = tasks.find((t) => t.id === taskId);
 
@@ -298,7 +297,6 @@ export default function LandingPage() {
       });
 
       if (taskCategory && taskToSchedule) {
-        // Update the task in its category
         setAllTasksData((prev) => {
           const newData = { ...prev };
           const categoryTasks = [...newData[taskCategory!]];
@@ -319,7 +317,7 @@ export default function LandingPage() {
           return newData;
         });
 
-        // If the task is from the current category, remove it from unscheduled tasks
+        // handle task box not reloading the category avoiding duping
         if (taskCategory === activeCategory) {
           setUnscheduledTasks((prev) => prev.filter((t) => t.id !== taskId));
         }
@@ -333,10 +331,10 @@ export default function LandingPage() {
 
     if (!task) return;
 
-    // Check if the new size would overlap with other tasks
+    // overlap check
     const isOverlapping = timetableTasks.some(
       (t) =>
-        t.taskId !== taskId && // Don't check against itself
+        t.taskId !== taskId &&
         t.day === task.day &&
         t.startHour < newEndHour &&
         t.startHour >= task.startHour + 1,
@@ -348,7 +346,7 @@ export default function LandingPage() {
       return;
     }
 
-    // Update the task in its category
+    // Update time frame
     setAllTasksData((prev) => {
       const newData = { ...prev };
       const categoryTasks = [...newData[task.category]];
@@ -367,13 +365,13 @@ export default function LandingPage() {
     });
   };
 
-  // Handle returning a task from the timetable to the task list
+  // handle returning a task from the timetable to the task list
   const handleReturnTaskToList = (taskId: string) => {
     const scheduledTask = timetableTasks.find((tt) => tt.taskId === taskId);
 
     if (!scheduledTask) return;
 
-    // Update the task in its category
+    // update the task in its category regardless of active category
     setAllTasksData((prev) => {
       const newData = { ...prev };
       const categoryTasks = [...newData[scheduledTask.category]];
@@ -394,7 +392,6 @@ export default function LandingPage() {
       return newData;
     });
 
-    // If the task belongs to the current category, add it to unscheduled tasks
     if (scheduledTask.category === activeCategory) {
       const taskData = allTasksData[scheduledTask.category].find(
         (t) => t.id === taskId,
@@ -424,6 +421,7 @@ export default function LandingPage() {
       <div className="flex pt-2 w-full pr-5 flex-1 overflow-hidden">
         <div className="flex flex-col">
           <BorderBox
+            ref={borderBoxRef}
             tasks={unscheduledTasks}
             onAddTask={handleAddTask}
             onDeleteTasks={handleDeleteTasks}
@@ -434,6 +432,7 @@ export default function LandingPage() {
         </div>
         <BorderlessBox
           scheduledTasks={timetableTasks}
+          onEditTask={handleEditTask}
           onRetractTask={handleReturnTaskToList}
           onTaskDrop={handleTaskDrop}
           onTaskResize={handleTaskResize}

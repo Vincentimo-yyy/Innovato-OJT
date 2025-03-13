@@ -1,6 +1,6 @@
 /* eslint-disable no-console */
 "use client";
-import { useState } from "react";
+import { useState, forwardRef, useImperativeHandle } from "react";
 import {
   Modal,
   ModalContent,
@@ -11,7 +11,9 @@ import {
   SelectItem,
   Input,
   Checkbox,
+  TimeInput,
 } from "@heroui/react";
+import { format } from "date-fns";
 
 import { TaskCard } from "./task-card";
 import {
@@ -37,17 +39,22 @@ export interface Task {
   color: string;
 }
 
+// Add timeEditToggle state
+// Modify the props interface to include the new function
 interface BorderBoxProps {
   tasks: Task[];
   onAddTask: (task: Omit<Task, "id">) => void;
   onDeleteTasks: (updatedTasks: Task[]) => void;
+  openModalWithTimeEdit?: () => void; // Add this prop
 }
 
-export default function BorderBox({
-  tasks,
-  onAddTask,
-  onDeleteTasks,
-}: BorderBoxProps) {
+// Export the openModalWithTimeEdit function
+export type { BorderBoxProps };
+
+const BorderBox = forwardRef<
+  { openModalWithTimeEdit: () => void },
+  BorderBoxProps
+>(({ tasks, onAddTask, onDeleteTasks }, ref) => {
   const {
     isOpen: isAddTaskOpen,
     onOpen: onAddTaskOpen,
@@ -59,6 +66,10 @@ export default function BorderBox({
   const [taskPriority, setTaskPriority] = useState(taskTypes[0].key);
   const [isHovered, setIsHovered] = useState(false);
   const [selectedTasks, setSelectedTasks] = useState<string[]>([]);
+  const [timeEditToggle, setTimeEditToggle] = useState(false);
+
+  const now = new Date();
+  const today = format(now, "MMMM d, yyyy");
 
   const toggleSelectAll = () => {
     if (selectedTasks.length === tasks.length) {
@@ -109,6 +120,22 @@ export default function BorderBox({
     setTaskPriority(taskTypes[0].key);
     onAddTaskOpenChange();
   };
+
+  // Add a function to reset the time edit toggle when closing the modal
+  const handleModalOpenChange = () => {
+    onAddTaskOpenChange();
+    if (!isAddTaskOpen) {
+      setTimeEditToggle(false);
+    }
+  };
+
+  // Expose the openModalWithTimeEdit function via ref
+  useImperativeHandle(ref, () => ({
+    openModalWithTimeEdit: () => {
+      setTimeEditToggle(true);
+      onAddTaskOpen();
+    },
+  }));
 
   return (
     <div className="px-6">
@@ -170,7 +197,7 @@ export default function BorderBox({
           isOpen={isAddTaskOpen}
           placement="top-center"
           size="xl"
-          onOpenChange={onAddTaskOpenChange}
+          onOpenChange={handleModalOpenChange}
         >
           <ModalContent>
             <ModalBody>
@@ -201,9 +228,33 @@ export default function BorderBox({
                 value={taskDetails}
                 onChange={(e) => setTaskDetails(e.target.value)}
               />
-              <div className="flex justify-end ">
+              <div className="flex flex-row items-center">
+                {/*time edit */}
+                <div
+                  className={`items-center space-x-2 ${timeEditToggle ? "flex" : "hidden"}`}
+                >
+                  <Input
+                    isReadOnly
+                    className="w-[128px] h-[50px]"
+                    label="Date"
+                    value={today}
+                  />
+                  <TimeInput
+                    className="w-[100px]  h-[50px]"
+                    hourCycle={12}
+                    label="Start Time"
+                    size="sm"
+                  />
+                  <p>-</p>
+                  <TimeInput
+                    className="w-[100px]  h-[50px]"
+                    hourCycle={12}
+                    label="End Time"
+                    size="sm"
+                  />
+                </div>
                 <button
-                  className="w-[25px] h-[25px] rounded-full flex items-center hover:-rotate-45 transition-transform duration-500"
+                  className="ml-auto w-[25px] h-[25px] rounded-full flex items-center hover:-rotate-45 transition-transform duration-500"
                   onClick={addTask}
                 >
                   <SubmitIcon height="25" width="25" />
@@ -269,4 +320,8 @@ export default function BorderBox({
       </div>
     </div>
   );
-}
+});
+
+BorderBox.displayName = "BorderBox";
+
+export default BorderBox;

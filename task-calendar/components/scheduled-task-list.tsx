@@ -18,12 +18,14 @@ interface ScheduledTaskListProps {
   scheduledTasks: ScheduledTask[];
   onRetractTask: (taskId: string) => void;
   onTaskResize: (taskId: string, newEndHour: number) => void;
+  onEditTask?: () => void; // Add this prop
 }
 
 export function ScheduledTaskList({
   scheduledTasks,
   onRetractTask,
   onTaskResize,
+  onEditTask,
 }: ScheduledTaskListProps) {
   const [resizing, setResizing] = useState<string | null>(null);
   const startY = useRef<number>(0);
@@ -64,11 +66,9 @@ export function ScheduledTaskList({
       currentTask.current = null;
     };
 
-    // Add event listeners to the window
     window.addEventListener("mousemove", handleMouseMove);
     window.addEventListener("mouseup", handleMouseUp);
 
-    // Clean up
     return () => {
       window.removeEventListener("mousemove", handleMouseMove);
       window.removeEventListener("mouseup", handleMouseUp);
@@ -93,23 +93,7 @@ export function ScheduledTaskList({
       startHeight.current = element.getBoundingClientRect().height;
     }
 
-    // Set the resizing state last to trigger the effect
     setResizing(task.taskId);
-  };
-
-  // Keyboard handling for accessibility
-  const handleKeyDown = (e: React.KeyboardEvent, task: ScheduledTask) => {
-    if (e.key === "ArrowDown") {
-      e.preventDefault();
-      const newEndHour = task.endHour + 1;
-
-      onTaskResize(task.taskId, newEndHour);
-    } else if (e.key === "ArrowUp") {
-      e.preventDefault();
-      const newEndHour = Math.max(task.startHour + 1, task.endHour - 1);
-
-      onTaskResize(task.taskId, newEndHour);
-    }
   };
 
   // Get category badge color
@@ -139,6 +123,7 @@ export function ScheduledTaskList({
             className={`${scheduledTask.task.color} rounded-md p-2 shadow-md text-white flex flex-col justify-between relative`}
             draggable={!resizing}
             style={{ height }}
+            onDoubleClick={() => onEditTask && onEditTask()}
             onDragStart={(e) => {
               if (resizing) {
                 e.preventDefault();
@@ -180,7 +165,7 @@ export function ScheduledTaskList({
                   onRetractTask(scheduledTask.taskId);
                 }}
               >
-                <ArrowLeft size={12} />
+                <ArrowLeft size={15} />
               </button>
             </div>
 
@@ -204,7 +189,6 @@ export function ScheduledTaskList({
               className="absolute bottom-0 left-0 right-0 h-4 cursor-ns-resize hover:bg-white/20 rounded-b-md border-0 p-0 m-0 focus:outline-none focus:bg-white/30"
               role="slider"
               tabIndex={0}
-              onKeyDown={(e) => handleKeyDown(e, scheduledTask)}
               onMouseDown={(e) => handleResizeStart(e, scheduledTask)}
             />
           </div>

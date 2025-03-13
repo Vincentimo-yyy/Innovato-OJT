@@ -22,6 +22,7 @@ interface TimeSlot {
   tasks: ScheduledTask[];
 }
 
+// Update the interface to include the onEditTask prop
 interface BorderlessBoxProps {
   scheduledTasks: ScheduledTask[];
   onTaskDrop: (
@@ -32,6 +33,7 @@ interface BorderlessBoxProps {
   ) => void;
   onTaskResize: (taskId: string, newEndHour: number) => void;
   onRetractTask: (taskId: string) => void;
+  onEditTask?: () => void; // Add this prop
 }
 
 export default function BorderlessBox({
@@ -39,6 +41,7 @@ export default function BorderlessBox({
   onTaskDrop,
   onTaskResize,
   onRetractTask,
+  onEditTask,
 }: BorderlessBoxProps) {
   const days = [
     { day: "MON", date: "24" },
@@ -51,16 +54,14 @@ export default function BorderlessBox({
     hour: number;
   } | null>(null);
 
-  // Add this near the top of the component, after other useState declarations
   const [containerHeight, setContainerHeight] = useState("calc(100vh - 120px)");
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Add this useEffect to handle resize and initial sizing
   useEffect(() => {
     const handleResize = () => {
       if (containerRef.current) {
-        const headerHeight = 80; // Approximate header height
-        const safetyMargin = 40; // Extra margin to account for bookmarks bar and other browser UI
+        const headerHeight = 80;
+        const safetyMargin = 40;
         const availableHeight =
           window.innerHeight - headerHeight - safetyMargin;
 
@@ -68,13 +69,10 @@ export default function BorderlessBox({
       }
     };
 
-    // Initial calculation
     handleResize();
 
-    // Add event listener for window resize
     window.addEventListener("resize", handleResize);
 
-    // Cleanup
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
@@ -134,8 +132,6 @@ export default function BorderlessBox({
 
           return;
         }
-
-        // Update UI state directly without database call
         onTaskDrop(task.id, day, hour, endHour);
       }
     } catch (error) {
@@ -143,7 +139,7 @@ export default function BorderlessBox({
     }
   };
 
-  // New function to merge time slots for tasks
+  // merge time slots for tasks
   const getMergedTimeSlots = (day: string): TimeSlot[] => {
     const dayTasks = scheduledTasks.filter((task) => task.day === day);
     const slots: TimeSlot[] = [];
@@ -155,7 +151,6 @@ export default function BorderlessBox({
       );
 
       if (tasksStartingAtThisHour.length > 0) {
-        // Get the longest task starting at this hour
         const longestTask = tasksStartingAtThisHour.reduce((prev, current) =>
           current.endHour - current.startHour > prev.endHour - prev.startHour
             ? current
@@ -167,22 +162,17 @@ export default function BorderlessBox({
           endHour: longestTask.endHour,
           tasks: tasksStartingAtThisHour,
         });
-
-        // Skip the hours covered by this task
         currentHour = longestTask.endHour;
       } else {
-        // If no task starts here, check if we're in the middle of a task
         const overlappingTask = dayTasks.find(
           (task) => task.startHour < currentHour && task.endHour > currentHour,
         );
 
         if (overlappingTask) {
-          // Skip this hour as it's part of an existing task
           currentHour++;
           continue;
         }
 
-        // Add an empty slot
         slots.push({
           startHour: currentHour,
           endHour: currentHour + 1,
@@ -195,7 +185,6 @@ export default function BorderlessBox({
     return slots;
   };
 
-  // Format the time for display
   const formatTime = (hour: number) => {
     const period = hour < 12 ? "AM" : hour === 12 ? "PM" : "PM";
     const displayHour = hour <= 12 ? hour : hour - 12;
@@ -242,8 +231,10 @@ export default function BorderlessBox({
                     </div>
 
                     {slot.tasks.length > 0 && (
+                      // Pass the onEditTask prop to ScheduledTaskList
                       <ScheduledTaskList
                         scheduledTasks={slot.tasks}
+                        onEditTask={onEditTask}
                         onRetractTask={onRetractTask}
                         onTaskResize={(taskId, newEndHour) => {
                           if (

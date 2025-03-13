@@ -13,7 +13,6 @@ import {
 } from "./icons";
 import Clock from "./clock";
 
-// Define the type for menu categories
 export type TaskCategory = "home" | "school" | "work";
 
 interface HeaderProps {
