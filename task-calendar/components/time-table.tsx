@@ -128,7 +128,7 @@ export default function BorderlessBox({
     return true;
   };
 
-  const handleDrop = (e: React.DragEvent, day: string, startHour: number) => {
+  const handleDrop = (e: React.DragEvent, day: string, hour: number) => {
     e.preventDefault();
     e.currentTarget.classList.remove("bg-gray-100");
 
@@ -137,28 +137,17 @@ export default function BorderlessBox({
 
       if (taskData) {
         const task = JSON.parse(taskData);
-        // If the task already has a duration, use it, otherwise default to 1 hour
-        let duration = task.endHour ? task.endHour - task.startHour : 1;
+        const duration = task.endHour ? task.endHour - task.startHour : 1;
+        const endHour = hour + duration;
 
-        // If the slot is less than an hour (like 2:15-3:00), adjust the duration
-        const nextHour = Math.ceil(startHour);
-
-        if (nextHour - startHour < 1) {
-          // Use the remaining time in the current hour as the minimum duration
-          duration = Math.min(duration, nextHour - startHour);
-        }
-
-        const endHour = startHour + duration;
-
-        if (!areTimeSlotsAvailable(day, startHour, endHour, task.id)) {
+        if (!areTimeSlotsAvailable(day, hour, endHour, task.id)) {
           console.log(`⚠️ Cannot drop task: Time slot(s) already occupied`);
-          setDropError({ day, hour: startHour });
+          setDropError({ day, hour });
           setTimeout(() => setDropError(null), 2000);
 
           return;
         }
-
-        onTaskDrop(task.id, day, startHour, endHour);
+        onTaskDrop(task.id, day, hour, endHour);
       }
     } catch (error) {
       console.error("Error parsing dropped task:", error);
