@@ -133,9 +133,9 @@ export default function LandingPage() {
   const [taskIdCounter, setTaskIdCounter] = useState(4);
 
   // Add a ref to access the BorderBox component's methods
-  const borderBoxRef = useRef<{ openModalWithTimeEdit: () => void } | null>(
-    null,
-  );
+  const borderBoxRef = useRef<{
+    openModalWithTimeEdit: (taskData?: any) => void;
+  } | null>(null);
 
   useEffect(() => {
     setUnscheduledTasks(
@@ -186,9 +186,59 @@ export default function LandingPage() {
   };
 
   // Add a function to handle task editing
-  const handleEditTask = () => {
+  const handleEditTask = (taskData: {
+    id: string;
+    startHour: number;
+    endHour: number;
+    day: string;
+    task?: Task;
+  }) => {
+    // If we have updated task data, update the task in allTasksData
+    if (taskData.task) {
+      // Find which category the task belongs to
+      let taskCategory: TaskCategory | null = null;
+
+      Object.entries(allTasksData).forEach(([category, tasks]) => {
+        if (tasks.some((t) => t.id === taskData.id)) {
+          taskCategory = category as TaskCategory;
+        }
+      });
+
+      if (taskCategory) {
+        // Update the task with new data
+        setAllTasksData((prev) => {
+          const newData = { ...prev };
+          const categoryTasks = [...newData[taskCategory!]];
+          const taskIndex = categoryTasks.findIndex(
+            (t) => t.id === taskData.id,
+          );
+
+          if (taskIndex !== -1) {
+            categoryTasks[taskIndex] = {
+              ...categoryTasks[taskIndex],
+              title: taskData.task!.title,
+              details: taskData.task!.details,
+              priority: taskData.task!.priority,
+              color: taskData.task!.color,
+              day: taskData.day,
+              startHour: taskData.startHour,
+              endHour: taskData.endHour,
+            };
+
+            newData[taskCategory!] = categoryTasks;
+          }
+
+          return newData;
+        });
+
+        // No need to open the BorderBox modal if we've already updated the task
+        return;
+      }
+    }
+
+    // If no task data or category not found, fall back to the BorderBox modal
     if (borderBoxRef.current) {
-      borderBoxRef.current.openModalWithTimeEdit();
+      borderBoxRef.current.openModalWithTimeEdit(taskData);
     }
   };
 

@@ -1,6 +1,7 @@
 "use client";
 import type React from "react";
 import type { Task } from "./borderbox";
+import type { TaskTimeData } from "./task-form-modal";
 
 import { useRef, useState, useEffect } from "react";
 import { ArrowLeft } from "lucide-react";
@@ -18,7 +19,7 @@ interface ScheduledTaskListProps {
   scheduledTasks: ScheduledTask[];
   onRetractTask: (taskId: string) => void;
   onTaskResize: (taskId: string, newEndHour: number) => void;
-  onEditTask?: () => void; // Add this prop
+  onEditTask?: (taskData: TaskTimeData & { task?: Task }) => void;
 }
 
 export function ScheduledTaskList({
@@ -31,18 +32,6 @@ export function ScheduledTaskList({
   const startY = useRef<number>(0);
   const startHeight = useRef<number>(0);
   const currentTask = useRef<ScheduledTask | null>(null);
-
-  // Format time for display
-  const formatTimeRange = (startHour: number, endHour: number) => {
-    const formatHour = (hour: number) => {
-      const period = hour < 12 ? "am" : "pm";
-      const displayHour = hour <= 12 ? hour : hour - 12;
-
-      return `${displayHour}${period}`;
-    };
-
-    return `${formatHour(startHour)} - ${formatHour(endHour)}`;
-  };
 
   // This effect handles the resize move and end events at the component level
   useEffect(() => {
@@ -123,7 +112,16 @@ export function ScheduledTaskList({
             className={`${scheduledTask.task.color} rounded-md p-2 shadow-md text-white flex flex-col justify-between relative`}
             draggable={!resizing}
             style={{ height }}
-            onDoubleClick={() => onEditTask && onEditTask()}
+            onDoubleClick={() =>
+              onEditTask &&
+              onEditTask({
+                id: scheduledTask.taskId,
+                startHour: scheduledTask.startHour,
+                endHour: scheduledTask.endHour,
+                day: scheduledTask.day,
+                task: scheduledTask.task,
+              })
+            }
             onDragStart={(e) => {
               if (resizing) {
                 e.preventDefault();
@@ -168,16 +166,6 @@ export function ScheduledTaskList({
                 <ArrowLeft size={15} />
               </button>
             </div>
-
-            {/* Show time range for multi-hour tasks */}
-            {duration > 1 && (
-              <div className="text-xs mt-1 text-white/80">
-                {formatTimeRange(
-                  scheduledTask.startHour,
-                  scheduledTask.endHour,
-                )}
-              </div>
-            )}
 
             {/* Accessible resize handle */}
             <button

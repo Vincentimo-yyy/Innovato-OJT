@@ -4,8 +4,10 @@ import type React from "react";
 import type { Task } from "./borderbox";
 
 import { useState, useEffect, useRef } from "react";
+import { useDisclosure } from "@heroui/react";
 
 import { ScheduledTaskList } from "./scheduled-task-list";
+import { TaskFormModal, type TaskTimeData } from "./task-form-modal";
 
 interface ScheduledTask {
   taskId: string;
@@ -33,7 +35,13 @@ interface BorderlessBoxProps {
   ) => void;
   onTaskResize: (taskId: string, newEndHour: number) => void;
   onRetractTask: (taskId: string) => void;
-  onEditTask?: () => void; // Add this prop
+  onEditTask?: (taskData: {
+    id: string;
+    startHour: number;
+    endHour: number;
+    day: string;
+    task?: Task;
+  }) => void; // We'll keep this for backward compatibility
 }
 
 export default function BorderlessBox({
@@ -56,6 +64,13 @@ export default function BorderlessBox({
 
   const [containerHeight, setContainerHeight] = useState("calc(100vh - 120px)");
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Add state for the task form modal
+  const { isOpen, onOpen, onOpenChange } = useDisclosure();
+  const [editingTaskData, setEditingTaskData] = useState<TaskTimeData | null>(
+    null,
+  );
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
 
   useEffect(() => {
     const handleResize = () => {
@@ -139,57 +154,158 @@ export default function BorderlessBox({
     }
   };
 
-  // merge time slots for tasks
-  const getMergedTimeSlots = (day: string): TimeSlot[] => {
-    const dayTasks = scheduledTasks.filter((task) => task.day === day);
-    const slots: TimeSlot[] = [];
-    let currentHour = 1;
+  // New function to handle task editing via our own modal
+  const handleEditTask = (taskData: TaskTimeData) => {
+    // Find the task in scheduledTasks
+    const scheduledTask = scheduledTasks.find(
+      (task) => task.taskId === taskData.id,
+    );
 
-    while (currentHour <= 24) {
-      const tasksStartingAtThisHour = dayTasks.filter(
-        (task) => task.startHour === currentHour,
+    if (scheduledTask) {
+      setEditingTaskData(taskData);
+      setEditingTask(scheduledTask.task);
+      onOpen();
+    }
+  };
+
+  // Handle form submission from the modal
+  const handleTaskFormSubmit = (formData: {
+    title: string;
+    details: string;
+    priority: string;
+    color: string;
+    startHour?: number;
+    endHour?: number;
+    day?: string;
+  }) => {
+    if (editingTaskData && editingTaskData.id) {
+      // Find the task in scheduledTasks
+      const taskIndex = scheduledTasks.findIndex(
+        (task) => task.taskId === editingTaskData.id,
       );
 
-      if (tasksStartingAtThisHour.length > 0) {
-        const longestTask = tasksStartingAtThisHour.reduce((prev, current) =>
-          current.endHour - current.startHour > prev.endHour - prev.startHour
-            ? current
-            : prev,
-        );
+      if (taskIndex !== -1) {
+        // We need to update both the time data and the task content
+        if (onEditTask) {
+          // Create a merged task with updated properties from the form
+          const updatedTask = {
+            ...scheduledTasks[taskIndex].task,
+            title: formData.title,
+            details: formData.details,
+            priority: formData.priority,
+            color: formData.color,
+          };
 
-        slots.push({
-          startHour: currentHour,
-          endHour: longestTask.endHour,
-          tasks: tasksStartingAtThisHour,
-        });
-        currentHour = longestTask.endHour;
-      } else {
-        const overlappingTask = dayTasks.find(
-          (task) => task.startHour < currentHour && task.endHour > currentHour,
-        );
-
-        if (overlappingTask) {
-          currentHour++;
-          continue;
+          // Pass both the time data and updated task to the parent
+          onEditTask({
+            id: editingTaskData.id,
+            startHour:
+              formData.startHour !== undefined
+                ? formData.startHour
+                : scheduledTasks[taskIndex].startHour,
+            endHour:
+              formData.endHour !== undefined
+                ? formData.endHour
+                : scheduledTasks[taskIndex].endHour,
+            day:
+              formData.day !== undefined
+                ? formData.day
+                : scheduledTasks[taskIndex].day,
+            task: updatedTask, // Add the updated task data
+          });
         }
-
-        slots.push({
-          startHour: currentHour,
-          endHour: currentHour + 1,
-          tasks: [],
-        });
-        currentHour++;
       }
     }
 
-    return slots;
+    // Close the modal and reset editing state
+    onOpenChange();
+    setEditingTaskData(null);
+    setEditingTask(null);
+  };
+
+  // Simplified time slot generation
+  const getTimeSlots = (day: string): TimeSlot[] => {
+    // Create basic hourly slots
+    const hourlySlots: TimeSlot[] = Array.from({ length: 24 }, (_, i) => ({
+      startHour: i + 1,
+      endHour: i + 2,
+      tasks: [],
+    }));
+
+    // Get tasks for this day
+    const dayTasks = scheduledTasks.filter((task) => task.day === day);
+
+    if (dayTasks.length === 0) {
+      return hourlySlots;
+    }
+
+    // Create a map of slots with tasks
+    const result: TimeSlot[] = [];
+
+    // Process each hour
+    for (let hour = 1; hour <= 24; hour++) {
+      // Find tasks that start in this hour
+      const tasksStartingInThisHour = dayTasks.filter(
+        (task) => Math.floor(task.startHour) === hour,
+      );
+
+      // Find tasks that overlap this hour but started earlier
+      const overlappingTasks = dayTasks.filter(
+        (task) => task.startHour < hour && task.endHour > hour,
+      );
+
+      if (tasksStartingInThisHour.length > 0) {
+        // Handle tasks that start in this hour
+        for (const task of tasksStartingInThisHour) {
+          // If task starts after the hour, add a gap slot
+          if (task.startHour > hour) {
+            result.push({
+              startHour: hour,
+              endHour: task.startHour,
+              tasks: [],
+            });
+          }
+
+          // Add the task slot
+          result.push({
+            startHour: task.startHour,
+            endHour: task.endHour,
+            tasks: [task],
+          });
+
+          // If task ends with a partial hour, add a slot to the next hour
+          if (Math.floor(task.endHour) === hour && task.endHour < hour + 1) {
+            result.push({
+              startHour: task.endHour,
+              endHour: hour + 1,
+              tasks: [],
+            });
+          }
+        }
+      } else if (overlappingTasks.length === 0) {
+        // No tasks in this hour, add a regular hourly slot
+        result.push({
+          startHour: hour,
+          endHour: hour + 1,
+          tasks: [],
+        });
+      }
+      // Skip hours that are completely covered by tasks
+    }
+
+    return result;
   };
 
   const formatTime = (hour: number) => {
-    const period = hour < 12 ? "AM" : hour === 12 ? "PM" : "PM";
-    const displayHour = hour <= 12 ? hour : hour - 12;
+    const hourWhole = Math.floor(hour);
+    const minutes = Math.round((hour - hourWhole) * 60);
+    const period = hourWhole < 12 ? "AM" : hourWhole === 12 ? "PM" : "PM";
+    const displayHour = hourWhole <= 12 ? hourWhole : hourWhole - 12;
 
-    return `${displayHour}:00 ${period}`;
+    // Format minutes with leading zero
+    const minutesFormatted = minutes.toString().padStart(2, "0");
+
+    return `${displayHour}:${minutesFormatted} ${period}`;
   };
 
   return (
@@ -198,6 +314,23 @@ export default function BorderlessBox({
       className="w-full border-t border-gray-300 overflow-y-auto bg-white"
       style={{ maxHeight: containerHeight }}
     >
+      {/* Task Form Modal */}
+      <TaskFormModal
+        initialValues={
+          editingTask
+            ? {
+                title: editingTask.title,
+                details: editingTask.details,
+                priority: editingTask.priority,
+              }
+            : undefined
+        }
+        isOpen={isOpen}
+        timeEditData={editingTaskData}
+        onOpenChange={onOpenChange}
+        onSubmit={handleTaskFormSubmit}
+      />
+
       <div className="grid grid-cols-3 divide-x divide-gray-300">
         {days.map(({ day, date }) => (
           <div key={date} className="flex flex-col">
@@ -207,7 +340,7 @@ export default function BorderlessBox({
             </h2>
 
             <div className="flex flex-col flex-1">
-              {getMergedTimeSlots(day).map((slot) => {
+              {getTimeSlots(day).map((slot) => {
                 const isErrorSlot =
                   dropError?.day === day && dropError?.hour === slot.startHour;
                 const hasTask = slot.tasks.length > 0;
@@ -231,10 +364,9 @@ export default function BorderlessBox({
                     </div>
 
                     {slot.tasks.length > 0 && (
-                      // Pass the onEditTask prop to ScheduledTaskList
                       <ScheduledTaskList
                         scheduledTasks={slot.tasks}
-                        onEditTask={onEditTask}
+                        onEditTask={handleEditTask}
                         onRetractTask={onRetractTask}
                         onTaskResize={(taskId, newEndHour) => {
                           if (

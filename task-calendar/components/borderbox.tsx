@@ -1,28 +1,11 @@
 /* eslint-disable no-console */
 "use client";
 import { useState, forwardRef, useImperativeHandle } from "react";
-import {
-  Modal,
-  ModalContent,
-  ModalBody,
-  useDisclosure,
-  Textarea,
-  Select,
-  SelectItem,
-  Input,
-  Checkbox,
-  TimeInput,
-} from "@heroui/react";
-import { format } from "date-fns";
+import { useDisclosure, Checkbox } from "@heroui/react";
 
+import { TaskFormModal, type TaskTimeData } from "./task-form-modal";
 import { TaskCard } from "./task-card";
-import {
-  AddIcon,
-  SubmitIcon,
-  ExpandIcon,
-  ArchiveIcon,
-  DeleteIcon,
-} from "./icons";
+import { AddIcon, ExpandIcon, ArchiveIcon, DeleteIcon } from "./icons";
 import { CustomModal } from "./custom-modal";
 
 export const taskTypes = [
@@ -52,7 +35,7 @@ interface BorderBoxProps {
 export type { BorderBoxProps };
 
 const BorderBox = forwardRef<
-  { openModalWithTimeEdit: () => void },
+  { openModalWithTimeEdit: (taskData?: TaskTimeData) => void },
   BorderBoxProps
 >(({ tasks, onAddTask, onDeleteTasks }, ref) => {
   const {
@@ -61,15 +44,11 @@ const BorderBox = forwardRef<
     onOpenChange: onAddTaskOpenChange,
   } = useDisclosure();
   const [isExpandedOpen, setIsExpandedOpen] = useState(false);
-  const [taskDetails, setTaskDetails] = useState("");
-  const [taskTitle, setTaskTitle] = useState("");
-  const [taskPriority, setTaskPriority] = useState(taskTypes[0].key);
   const [isHovered, setIsHovered] = useState(false);
   const [selectedTasks, setSelectedTasks] = useState<string[]>([]);
-  const [timeEditToggle, setTimeEditToggle] = useState(false);
-
-  const now = new Date();
-  const today = format(now, "MMMM d, yyyy");
+  const [editingTaskData, setEditingTaskData] = useState<TaskTimeData | null>(
+    null,
+  );
 
   const toggleSelectAll = () => {
     if (selectedTasks.length === tasks.length) {
@@ -98,44 +77,28 @@ const BorderBox = forwardRef<
     onDeleteTasks(updatedTasks); // Pass new list to parent
   };
 
-  // Function to add new task
-  const addTask = () => {
-    if (!taskTitle.trim()) return; // Check if title is empty, pass
-
-    // Get priority color
-    const taskType =
-      taskTypes.find((t) => t.key === taskPriority) || taskTypes[0];
-
-    // Add task through parent component
-    onAddTask({
-      title: taskTitle,
-      details: taskDetails,
-      color: taskType.color,
-      priority: taskType.key,
-    });
-
-    // Reset fields & close modal
-    setTaskTitle("");
-    setTaskDetails("");
-    setTaskPriority(taskTypes[0].key);
-    onAddTaskOpenChange();
-  };
-
-  // Add a function to reset the time edit toggle when closing the modal
-  const handleModalOpenChange = () => {
-    onAddTaskOpenChange();
-    if (!isAddTaskOpen) {
-      setTimeEditToggle(false);
-    }
-  };
-
   // Expose the openModalWithTimeEdit function via ref
   useImperativeHandle(ref, () => ({
-    openModalWithTimeEdit: () => {
-      setTimeEditToggle(true);
-      onAddTaskOpen();
+    openModalWithTimeEdit: (taskData?: TaskTimeData) => {
+      setEditingTaskData(taskData ?? null);
+      // If we have task data, we could also pre-fill the task details
+      if (taskData?.id) {
+        const task = tasks.find((t) => t.id === taskData.id);
+
+        if (task) {
+          // We'll pass the task data to the modal
+          onAddTaskOpen();
+        }
+      } else {
+        onAddTaskOpen();
+      }
     },
   }));
+
+  // Find the task being edited (if any)
+  const editingTask = editingTaskData?.id
+    ? tasks.find((t) => t.id === editingTaskData.id)
+    : undefined;
 
   return (
     <div className="px-6">
@@ -192,77 +155,22 @@ const BorderBox = forwardRef<
           <AddIcon />
         </button>
 
-        {/* Add Task Modal */}
-        <Modal
+        {/* Task Form Modal - now using our new component */}
+        <TaskFormModal
+          initialValues={
+            editingTask
+              ? {
+                  title: editingTask.title,
+                  details: editingTask.details,
+                  priority: editingTask.priority,
+                }
+              : undefined
+          }
           isOpen={isAddTaskOpen}
-          placement="top-center"
-          size="xl"
-          onOpenChange={handleModalOpenChange}
-        >
-          <ModalContent>
-            <ModalBody>
-              <div className="flex w-[145px] flex-wrap ">
-                <Select
-                  className={`max-w-xs`}
-                  label="Level of Priority"
-                  value={taskPriority}
-                  onChange={(e) => setTaskPriority(e.target.value)}
-                >
-                  {taskTypes.map((taskType) => (
-                    <SelectItem key={taskType.key}>{taskType.label}</SelectItem>
-                  ))}
-                </Select>
-              </div>
-              <Input
-                className="w-full"
-                label="Task Title"
-                placeholder="Enter Title"
-                type="Title"
-                value={taskTitle}
-                onChange={(e) => setTaskTitle(e.target.value)}
-              />
-              <Textarea
-                className={`w-full`}
-                label="Task Description"
-                placeholder="Enter task description"
-                value={taskDetails}
-                onChange={(e) => setTaskDetails(e.target.value)}
-              />
-              <div className="flex flex-row items-center">
-                {/*time edit */}
-                <div
-                  className={`items-center space-x-2 ${timeEditToggle ? "flex" : "hidden"}`}
-                >
-                  <Input
-                    isReadOnly
-                    className="w-[128px] h-[50px]"
-                    label="Date"
-                    value={today}
-                  />
-                  <TimeInput
-                    className="w-[100px]  h-[50px]"
-                    hourCycle={12}
-                    label="Start Time"
-                    size="sm"
-                  />
-                  <p>-</p>
-                  <TimeInput
-                    className="w-[100px]  h-[50px]"
-                    hourCycle={12}
-                    label="End Time"
-                    size="sm"
-                  />
-                </div>
-                <button
-                  className="ml-auto w-[25px] h-[25px] rounded-full flex items-center hover:-rotate-45 transition-transform duration-500"
-                  onClick={addTask}
-                >
-                  <SubmitIcon height="25" width="25" />
-                </button>
-              </div>
-            </ModalBody>
-          </ModalContent>
-        </Modal>
+          timeEditData={editingTaskData}
+          onOpenChange={onAddTaskOpenChange}
+          onSubmit={onAddTask}
+        />
 
         <CustomModal
           isOpen={isExpandedOpen}
