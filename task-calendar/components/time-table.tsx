@@ -128,6 +128,7 @@ export default function BorderlessBox({
     return true;
   };
 
+  // Modify the handleDrop function to open the modal when a task is dropped
   const handleDrop = (e: React.DragEvent, day: string, hour: number) => {
     e.preventDefault();
     e.currentTarget.classList.remove("bg-gray-100");
@@ -147,7 +148,29 @@ export default function BorderlessBox({
 
           return;
         }
-        onTaskDrop(task.id, day, hour, endHour);
+
+        // Instead of immediately placing the task, open the modal for editing
+        setEditingTaskData({
+          id: task.id,
+          startHour: hour,
+          endHour: endHour,
+          day: day,
+        });
+
+        // Find the task in the unscheduled tasks or use the dragged task data
+        const existingTask = scheduledTasks.find((t) => t.taskId === task.id)
+          ?.task || {
+          id: task.id,
+          title: task.title || "New Task",
+          details: task.details || "",
+          priority: task.priority || "medium",
+          color: task.color || "bg-orange-400",
+        };
+
+        setEditingTask(existingTask);
+        onOpen();
+
+        // The actual placement will happen when the form is submitted
       }
     } catch (error) {
       console.error("Error parsing dropped task:", error);
@@ -168,7 +191,7 @@ export default function BorderlessBox({
     }
   };
 
-  // Handle form submission from the modal
+  // Update the handleTaskFormSubmit function to handle both edits and new placements
   const handleTaskFormSubmit = (formData: {
     title: string;
     details: string;
@@ -179,17 +202,17 @@ export default function BorderlessBox({
     day?: string;
   }) => {
     if (editingTaskData && editingTaskData.id) {
-      // Find the task in scheduledTasks
-      const taskIndex = scheduledTasks.findIndex(
+      // Check if this is an existing scheduled task or a new drop
+      const existingTaskIndex = scheduledTasks.findIndex(
         (task) => task.taskId === editingTaskData.id,
       );
 
-      if (taskIndex !== -1) {
-        // We need to update both the time data and the task content
+      if (existingTaskIndex !== -1) {
+        // This is an edit of an existing scheduled task
         if (onEditTask) {
           // Create a merged task with updated properties from the form
           const updatedTask = {
-            ...scheduledTasks[taskIndex].task,
+            ...scheduledTasks[existingTaskIndex].task,
             title: formData.title,
             details: formData.details,
             priority: formData.priority,
@@ -202,17 +225,39 @@ export default function BorderlessBox({
             startHour:
               formData.startHour !== undefined
                 ? formData.startHour
-                : scheduledTasks[taskIndex].startHour,
+                : scheduledTasks[existingTaskIndex].startHour,
             endHour:
               formData.endHour !== undefined
                 ? formData.endHour
-                : scheduledTasks[taskIndex].endHour,
+                : scheduledTasks[existingTaskIndex].endHour,
             day:
               formData.day !== undefined
                 ? formData.day
-                : scheduledTasks[taskIndex].day,
+                : scheduledTasks[existingTaskIndex].day,
             task: updatedTask, // Add the updated task data
           });
+        }
+      } else {
+        // This is a new task being dropped
+        // Use the onTaskDrop function to place the task
+        if (editingTaskData.id) {
+          // Use the form data for time values if provided, otherwise fall back to editingTaskData
+          const startHour =
+            formData.startHour !== undefined
+              ? formData.startHour
+              : editingTaskData.startHour;
+
+          const endHour =
+            formData.endHour !== undefined
+              ? formData.endHour
+              : editingTaskData.endHour;
+
+          const day =
+            formData.day !== undefined ? formData.day : editingTaskData.day;
+
+          if (day && startHour !== undefined && endHour !== undefined) {
+            onTaskDrop(editingTaskData.id, day, startHour, endHour);
+          }
         }
       }
     }

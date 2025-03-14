@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 "use client";
 
 import { useState } from "react";
@@ -12,6 +13,7 @@ import {
   SchoolIcon,
 } from "./icons";
 import Clock from "./clock";
+import { AddCategoryModal } from "./add-project";
 
 export type TaskCategory = "home" | "school" | "work";
 
@@ -25,9 +27,15 @@ export default function Header({
   onCategoryChange,
 }: HeaderProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [isAddCategoryModalOpen, setIsAddCategoryModalOpen] = useState(false);
 
   const handleCategoryClick = (category: TaskCategory) => {
     onCategoryChange(category);
+  };
+
+  const handleSaveCategory = (name: string, iconId: string) => {
+    // Handle the new category creation here
+    console.log("New category:", { name, iconId });
   };
 
   return (
@@ -77,6 +85,7 @@ export default function Header({
             transform: isOpen ? "translateX(200px)" : "translateX(0px)",
           }}
           title="Add Category"
+          onClick={() => setIsAddCategoryModalOpen(true)}
         >
           <AddIcon className="w-7 h-7" fill="black" />
         </button>
@@ -98,6 +107,13 @@ export default function Header({
       <div className="ml-auto">
         <DropdownComponent />
       </div>
+
+      {/* Add Category Modal */}
+      <AddCategoryModal
+        isOpen={isAddCategoryModalOpen}
+        onClose={() => setIsAddCategoryModalOpen(false)}
+        onSave={handleSaveCategory}
+      />
     </header>
   );
 }
