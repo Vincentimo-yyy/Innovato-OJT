@@ -128,7 +128,7 @@ export default function BorderlessBox({
     return true;
   };
 
-  const handleDrop = (e: React.DragEvent, day: string, hour: number) => {
+  const handleDrop = (e: React.DragEvent, day: string, startHour: number) => {
     e.preventDefault();
     e.currentTarget.classList.remove("bg-gray-100");
 
@@ -137,17 +137,28 @@ export default function BorderlessBox({
 
       if (taskData) {
         const task = JSON.parse(taskData);
-        const duration = task.endHour ? task.endHour - task.startHour : 1;
-        const endHour = hour + duration;
+        // If the task already has a duration, use it, otherwise default to 1 hour
+        let duration = task.endHour ? task.endHour - task.startHour : 1;
 
-        if (!areTimeSlotsAvailable(day, hour, endHour, task.id)) {
+        // If the slot is less than an hour (like 2:15-3:00), adjust the duration
+        const nextHour = Math.ceil(startHour);
+
+        if (nextHour - startHour < 1) {
+          // Use the remaining time in the current hour as the minimum duration
+          duration = Math.min(duration, nextHour - startHour);
+        }
+
+        const endHour = startHour + duration;
+
+        if (!areTimeSlotsAvailable(day, startHour, endHour, task.id)) {
           console.log(`⚠️ Cannot drop task: Time slot(s) already occupied`);
-          setDropError({ day, hour });
+          setDropError({ day, hour: startHour });
           setTimeout(() => setDropError(null), 2000);
 
           return;
         }
-        onTaskDrop(task.id, day, hour, endHour);
+
+        onTaskDrop(task.id, day, startHour, endHour);
       }
     } catch (error) {
       console.error("Error parsing dropped task:", error);
@@ -254,6 +265,13 @@ export default function BorderlessBox({
         (task) => task.startHour < hour && task.endHour > hour,
       );
 
+      // Find tasks that end in this hour but started earlier
+      const tasksEndingInThisHour = dayTasks.filter(
+        (task) =>
+          Math.floor(task.startHour) < hour &&
+          Math.floor(task.endHour) === hour,
+      );
+
       if (tasksStartingInThisHour.length > 0) {
         // Handle tasks that start in this hour
         for (const task of tasksStartingInThisHour) {
@@ -275,6 +293,18 @@ export default function BorderlessBox({
 
           // If task ends with a partial hour, add a slot to the next hour
           if (Math.floor(task.endHour) === hour && task.endHour < hour + 1) {
+            result.push({
+              startHour: task.endHour,
+              endHour: hour + 1,
+              tasks: [],
+            });
+          }
+        }
+      } else if (tasksEndingInThisHour.length > 0) {
+        // Handle tasks that end in this hour but started earlier
+        for (const task of tasksEndingInThisHour) {
+          // Add a slot from the end of the task to the next hour
+          if (task.endHour < hour + 1) {
             result.push({
               startHour: task.endHour,
               endHour: hour + 1,
