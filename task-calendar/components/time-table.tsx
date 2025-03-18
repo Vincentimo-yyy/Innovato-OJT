@@ -24,7 +24,7 @@ interface TimeSlot {
   tasks: ScheduledTask[];
 }
 
-// Update the interface to include the onEditTask prop
+// Update the interface to include the taskData parameter
 interface BorderlessBoxProps {
   scheduledTasks: ScheduledTask[];
   onTaskDrop: (
@@ -32,6 +32,12 @@ interface BorderlessBoxProps {
     day: string,
     startHour: number,
     endHour: number,
+    taskData?: {
+      title: string;
+      details: string;
+      priority: string;
+      color: string;
+    },
   ) => void;
   onTaskResize: (taskId: string, newEndHour: number) => void;
   onRetractTask: (taskId: string) => void;
@@ -128,7 +134,7 @@ export default function BorderlessBox({
     return true;
   };
 
-  // Modify the handleDrop function to open the modal when a task is dropped
+  // Update the handleDrop function to properly handle task edits
   const handleDrop = (e: React.DragEvent, day: string, hour: number) => {
     e.preventDefault();
     e.currentTarget.classList.remove("bg-gray-100");
@@ -191,7 +197,7 @@ export default function BorderlessBox({
     }
   };
 
-  // Update the handleTaskFormSubmit function to handle both edits and new placements
+  // Update the handleTaskFormSubmit function to properly pass all task data
   const handleTaskFormSubmit = (formData: {
     title: string;
     details: string;
@@ -239,24 +245,28 @@ export default function BorderlessBox({
         }
       } else {
         // This is a new task being dropped
-        // Use the onTaskDrop function to place the task
+        // Use the onTaskDrop function to place the task with all form data
         if (editingTaskData.id) {
           // Use the form data for time values if provided, otherwise fall back to editingTaskData
           const startHour =
             formData.startHour !== undefined
               ? formData.startHour
               : editingTaskData.startHour;
-
           const endHour =
             formData.endHour !== undefined
               ? formData.endHour
               : editingTaskData.endHour;
-
           const day =
             formData.day !== undefined ? formData.day : editingTaskData.day;
 
           if (day && startHour !== undefined && endHour !== undefined) {
-            onTaskDrop(editingTaskData.id, day, startHour, endHour);
+            // Pass the complete task data including title, details, priority
+            onTaskDrop(editingTaskData.id, day, startHour, endHour, {
+              title: formData.title,
+              details: formData.details,
+              priority: formData.priority,
+              color: formData.color,
+            });
           }
         }
       }

@@ -68,9 +68,10 @@ export function TaskFormModal({
   // Reset form when modal opens with new data
   useEffect(() => {
     if (isOpen) {
-      setTaskTitle(initialValues.title || "");
-      setTaskDetails(initialValues.details || "");
-      setTaskPriority(initialValues.priority || taskTypes[0].key);
+      // Only reset the form when the modal first opens
+      setTaskTitle(initialValues?.title || "");
+      setTaskDetails(initialValues?.details || "");
+      setTaskPriority(initialValues?.priority || taskTypes[0].key);
 
       // Set time values from timeEditData
       if (timeEditData) {
@@ -95,7 +96,49 @@ export function TaskFormModal({
         }
       }
     }
-  }, [isOpen, initialValues, timeEditData, today]);
+  }, [isOpen]); // Only depend on isOpen, not on the other values
+
+  // Add a separate effect to handle initialValues changes
+  useEffect(() => {
+    if (isOpen && initialValues) {
+      // Update form when initialValues change and modal is open
+      if (initialValues.title !== undefined) {
+        setTaskTitle(initialValues.title);
+      }
+      if (initialValues.details !== undefined) {
+        setTaskDetails(initialValues.details);
+      }
+      if (initialValues.priority !== undefined) {
+        setTaskPriority(initialValues.priority);
+      }
+    }
+  }, [isOpen, initialValues]);
+
+  // Add a separate effect to handle timeEditData changes
+  useEffect(() => {
+    if (isOpen && timeEditData) {
+      // Update time values when timeEditData changes and modal is open
+      setDay(timeEditData.day || today);
+
+      if (timeEditData.startHour !== undefined) {
+        const startHourWhole = Math.floor(timeEditData.startHour);
+        const startMinutes = Math.round(
+          (timeEditData.startHour - startHourWhole) * 60,
+        );
+
+        setStartTime(new Time(startHourWhole, startMinutes));
+      }
+
+      if (timeEditData.endHour !== undefined) {
+        const endHourWhole = Math.floor(timeEditData.endHour);
+        const endMinutes = Math.round(
+          (timeEditData.endHour - endHourWhole) * 60,
+        );
+
+        setEndTime(new Time(endHourWhole, endMinutes));
+      }
+    }
+  }, [isOpen, timeEditData, today]);
 
   // Function to add new task
   const handleSubmit = () => {
@@ -169,16 +212,20 @@ export function TaskFormModal({
             className="w-full"
             label="Task Title"
             placeholder="Enter Title"
-            type="Title"
+            type="text" // Changed from "Title" to "text"
             value={taskTitle}
-            onChange={(e) => setTaskTitle(e.target.value)}
+            onChange={(e) => {
+              setTaskTitle(e.target.value);
+            }}
           />
           <Textarea
             className={`w-full`}
             label="Task Description"
             placeholder="Enter task description"
             value={taskDetails}
-            onChange={(e) => setTaskDetails(e.target.value)}
+            onChange={(e) => {
+              setTaskDetails(e.target.value);
+            }}
           />
           <div className="flex flex-row items-center">
             {/*time edit */}
