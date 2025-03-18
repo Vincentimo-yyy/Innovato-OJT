@@ -1,5 +1,7 @@
 "use client";
 
+import type React from "react";
+
 export const SubmitIcon = ({
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   fill = "white",

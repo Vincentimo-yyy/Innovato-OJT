@@ -1,4 +1,6 @@
 "use client";
+import type React from "react";
+
 import { CloseIcon } from "./icons";
 
 export const CustomModal = ({
