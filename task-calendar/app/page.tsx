@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 "use client";
 import { useState, useEffect, useRef, useCallback } from "react";
 
@@ -174,8 +173,6 @@ export default function LandingPage() {
       ...prev,
       [projectId]: [], // Initialize with empty tasks array
     }));
-
-    console.log(`Added new project category: ${projectId}`);
   }, []);
 
   // Update unscheduled tasks and timetable tasks when activeCategory or allTasksData changes
@@ -365,8 +362,6 @@ export default function LandingPage() {
         );
 
         if (isTimeSlotOccupied) {
-          console.log("Cannot place task: time slot(s) already occupied");
-
           return prevTimetableTasks; // Return unchanged
         }
 
@@ -480,8 +475,6 @@ export default function LandingPage() {
       );
 
       if (isOverlapping) {
-        console.log("Cannot resize task: would overlap with another task");
-
         return;
       }
 
@@ -538,9 +531,6 @@ export default function LandingPage() {
       if (scheduledTask.category === activeCategory) {
         // Instead of adding to unscheduledTasks directly, let the useEffect handle it
         // This prevents duplicate tasks with the same ID
-        console.log(
-          `Task ${taskId} returned to ${scheduledTask.category} category`,
-        );
       }
     },
     [activeCategory, timetableTasks],

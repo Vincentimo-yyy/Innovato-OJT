@@ -9,6 +9,7 @@ import { AddIcon, ExpandIcon, ArchiveIcon, DeleteIcon } from "./icons";
 import { CustomModal } from "./custom-modal";
 
 export const taskTypes = [
+  { label: "No Priority", key: "no priority", color: "bg-gray-500" },
   { label: "Low", key: "low", color: "bg-green-400" },
   { label: "Medium", key: "medium", color: "bg-orange-400" },
   { label: "High", key: "high", color: "bg-red-600" },

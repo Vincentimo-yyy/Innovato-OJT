@@ -26,7 +26,17 @@ export function TaskCard({
   width = "220px",
   height = "50px",
 }: TaskCardProps) {
+  // Update the handleDragStart function to handle the "no priority" option
   const handleDragStart = (e: React.DragEvent) => {
+    // Determine priority based on color
+    let priority;
+
+    if (color === "bg-green-400") priority = "low";
+    else if (color === "bg-orange-400") priority = "medium";
+    else if (color === "bg-red-600") priority = "high";
+    else if (color === "bg-gray-500") priority = "no priority";
+    else priority = "no priority"; // Default to no priority for any other color
+
     e.dataTransfer.setData(
       "application/json",
       JSON.stringify({
@@ -34,6 +44,7 @@ export function TaskCard({
         title: taskTitle,
         details: taskDetails,
         color,
+        priority, // Use the determined priority
       }),
     );
     e.dataTransfer.effectAllowed = "move";

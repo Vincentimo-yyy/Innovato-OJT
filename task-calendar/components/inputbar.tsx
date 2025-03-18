@@ -27,10 +27,10 @@ export default function InputBar({ onAddTask }: InputBarProps) {
     if (!inputValue.trim()) return; // Prevent empty input
 
     const newTask = {
-      title: "...",
-      details: inputValue,
-      color: "bg-white",
-      priority: "no priority",
+      title: inputValue,
+      details: "...",
+      color: "bg-gray-500", // Use black color for "no priority"
+      priority: "no priority", // Keep the "no priority" option
     };
 
     onAddTask(newTask); // Call the function passed from BorderBox

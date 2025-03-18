@@ -1,4 +1,4 @@
-/* eslint-disable no-console */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 import type React from "react";
 import type { Task } from "./borderbox";
@@ -11,7 +11,7 @@ import { TaskFormModal, type TaskTimeData } from "./task-form-modal";
 
 interface ScheduledTask {
   taskId: string;
-  category?: string; // Added category to display in the UI
+  category?: string;
   day: string;
   startHour: number;
   endHour: number;
@@ -24,7 +24,6 @@ interface TimeSlot {
   tasks: ScheduledTask[];
 }
 
-// Update the interface to include the taskData parameter
 interface BorderlessBoxProps {
   scheduledTasks: ScheduledTask[];
   onTaskDrop: (
@@ -47,7 +46,7 @@ interface BorderlessBoxProps {
     endHour: number;
     day: string;
     task?: Task;
-  }) => void; // We'll keep this for backward compatibility
+  }) => void;
 }
 
 export default function BorderlessBox({
@@ -71,7 +70,6 @@ export default function BorderlessBox({
   const [containerHeight, setContainerHeight] = useState("calc(100vh - 120px)");
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Add state for the task form modal
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const [editingTaskData, setEditingTaskData] = useState<TaskTimeData | null>(
     null,
@@ -134,7 +132,6 @@ export default function BorderlessBox({
     return true;
   };
 
-  // Update the handleDrop function to properly handle task edits
   const handleDrop = (e: React.DragEvent, day: string, hour: number) => {
     e.preventDefault();
     e.currentTarget.classList.remove("bg-gray-100");
@@ -148,14 +145,12 @@ export default function BorderlessBox({
         const endHour = hour + duration;
 
         if (!areTimeSlotsAvailable(day, hour, endHour, task.id)) {
-          console.log(`⚠️ Cannot drop task: Time slot(s) already occupied`);
           setDropError({ day, hour });
           setTimeout(() => setDropError(null), 2000);
 
           return;
         }
 
-        // Instead of immediately placing the task, open the modal for editing
         setEditingTaskData({
           id: task.id,
           startHour: hour,
@@ -163,7 +158,6 @@ export default function BorderlessBox({
           day: day,
         });
 
-        // Find the task in the unscheduled tasks or use the dragged task data
         const existingTask = scheduledTasks.find((t) => t.taskId === task.id)
           ?.task || {
           id: task.id,
@@ -175,17 +169,11 @@ export default function BorderlessBox({
 
         setEditingTask(existingTask);
         onOpen();
-
-        // The actual placement will happen when the form is submitted
       }
-    } catch (error) {
-      console.error("Error parsing dropped task:", error);
-    }
+    } catch (error) {}
   };
 
-  // New function to handle task editing via our own modal
   const handleEditTask = (taskData: TaskTimeData) => {
-    // Find the task in scheduledTasks
     const scheduledTask = scheduledTasks.find(
       (task) => task.taskId === taskData.id,
     );
@@ -197,7 +185,6 @@ export default function BorderlessBox({
     }
   };
 
-  // Update the handleTaskFormSubmit function to properly pass all task data
   const handleTaskFormSubmit = (formData: {
     title: string;
     details: string;
@@ -208,15 +195,12 @@ export default function BorderlessBox({
     day?: string;
   }) => {
     if (editingTaskData && editingTaskData.id) {
-      // Check if this is an existing scheduled task or a new drop
       const existingTaskIndex = scheduledTasks.findIndex(
         (task) => task.taskId === editingTaskData.id,
       );
 
       if (existingTaskIndex !== -1) {
-        // This is an edit of an existing scheduled task
         if (onEditTask) {
-          // Create a merged task with updated properties from the form
           const updatedTask = {
             ...scheduledTasks[existingTaskIndex].task,
             title: formData.title,
@@ -225,7 +209,6 @@ export default function BorderlessBox({
             color: formData.color,
           };
 
-          // Pass both the time data and updated task to the parent
           onEditTask({
             id: editingTaskData.id,
             startHour:
@@ -240,14 +223,11 @@ export default function BorderlessBox({
               formData.day !== undefined
                 ? formData.day
                 : scheduledTasks[existingTaskIndex].day,
-            task: updatedTask, // Add the updated task data
+            task: updatedTask,
           });
         }
       } else {
-        // This is a new task being dropped
-        // Use the onTaskDrop function to place the task with all form data
         if (editingTaskData.id) {
-          // Use the form data for time values if provided, otherwise fall back to editingTaskData
           const startHour =
             formData.startHour !== undefined
               ? formData.startHour
@@ -260,7 +240,6 @@ export default function BorderlessBox({
             formData.day !== undefined ? formData.day : editingTaskData.day;
 
           if (day && startHour !== undefined && endHour !== undefined) {
-            // Pass the complete task data including title, details, priority
             onTaskDrop(editingTaskData.id, day, startHour, endHour, {
               title: formData.title,
               details: formData.details,
@@ -272,7 +251,6 @@ export default function BorderlessBox({
       }
     }
 
-    // Close the modal and reset editing state
     onOpenChange();
     setEditingTaskData(null);
     setEditingTask(null);
@@ -376,7 +354,6 @@ export default function BorderlessBox({
     const period = hourWhole < 12 ? "AM" : hourWhole === 12 ? "PM" : "PM";
     const displayHour = hourWhole <= 12 ? hourWhole : hourWhole - 12;
 
-    // Format minutes with leading zero
     const minutesFormatted = minutes.toString().padStart(2, "0");
 
     return `${displayHour}:${minutesFormatted} ${period}`;
@@ -388,7 +365,6 @@ export default function BorderlessBox({
       className="w-full border-t border-gray-300 overflow-y-auto bg-white"
       style={{ maxHeight: containerHeight }}
     >
-      {/* Task Form Modal */}
       <TaskFormModal
         initialValues={
           editingTask
@@ -452,10 +428,6 @@ export default function BorderlessBox({
                             )
                           ) {
                             onTaskResize(taskId, newEndHour);
-                          } else {
-                            console.log(
-                              `⚠️ Cannot resize: Would overlap with another task`,
-                            );
                           }
                         }}
                       />
