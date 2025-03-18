@@ -365,7 +365,7 @@ export const MoneyIcon = ({
   fill = "none",
   className = "",
   width = "16",
-  height = "25",
+  height = "21",
   ...props
 }) => {
   return (
@@ -389,8 +389,8 @@ export const MoneyIcon = ({
 export const TechIcon = ({
   fill = "none",
   className = "",
-  height = "25",
-  width = "25",
+  height = "23",
+  width = "22",
   ...props
 }) => {
   return (
@@ -398,7 +398,7 @@ export const TechIcon = ({
       className={className}
       fill={fill}
       height={height}
-      viewBox="0 0 54 41"
+      viewBox="0 0 25 25"
       width={width}
       xmlns="http://www.w3.org/2000/svg"
       {...props}
@@ -414,13 +414,13 @@ export const TechIcon = ({
 export const MusicIcon = ({
   fill = "none",
   className = "",
-  height = "25",
-  width = "25",
+  height = "22",
+  width = "22",
   ...props
 }) => {
   return (
     <svg
-      className={className}
+      className={`mr-1 ${className}`}
       fill={fill}
       height={height}
       viewBox="0 0 25 25"
@@ -439,8 +439,8 @@ export const MusicIcon = ({
 export const CameraIcon = ({
   fill = "none",
   className = "",
-  height = "25",
-  width = "25",
+  height = "22",
+  width = "22",
   ...props
 }) => {
   return (
@@ -466,8 +466,8 @@ export const CameraIcon = ({
 export const CodeIcon = ({
   fill = "none",
   className = "",
-  height = "25",
-  width = "25",
+  height = "22",
+  width = "22",
   ...props
 }) => {
   return (
@@ -491,8 +491,8 @@ export const CodeIcon = ({
 export const HealthIcon = ({
   fill = "none",
   className = "",
-  height = "25",
-  width = "25",
+  height = "22",
+  width = "22",
   ...props
 }) => {
   return (
@@ -516,8 +516,8 @@ export const HealthIcon = ({
 export const GameIcon = ({
   fill = "none",
   className = "",
-  height = "25",
-  width = "25",
+  height = "22",
+  width = "23",
   ...props
 }) => {
   return (
@@ -543,8 +543,8 @@ export const GameIcon = ({
 export const PaletteIcon = ({
   fill = "none",
   className = "",
-  height = "25",
-  width = "25",
+  height = "22",
+  width = "22",
   ...props
 }) => {
   return (
