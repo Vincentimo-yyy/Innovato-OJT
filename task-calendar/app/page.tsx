@@ -1,203 +1,564 @@
 /* eslint-disable no-console */
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 
 import BorderBox, { type Task } from "@/components/borderbox";
-import Header from "@/components/header";
+import Header, { type TaskCategory, type Project } from "@/components/header";
 import BorderlessBox from "@/components/time-table";
 import InputBar from "@/components/inputbar";
 
-interface ScheduledTask {
+// Base task interface
+export interface TaskWithSchedule extends Task {
+  isScheduled: boolean;
+  category: TaskCategory;
+  day?: string;
+  startHour?: number;
+  endHour?: number;
+}
+
+// Scheduled task representation for the timetable
+interface TimetableTask {
   taskId: string;
+  category: TaskCategory;
   day: string;
   startHour: number;
   endHour: number;
   task: Task;
 }
 
+// Task database simulation - initial data
+const initialCategoryTasksData: Record<TaskCategory, TaskWithSchedule[]> = {
+  home: [
+    {
+      id: "home-task-1",
+      title: "Clean Kitchen",
+      priority: "medium",
+      details: "Clean the kitchen counters and do the dishes",
+      color: "bg-orange-400",
+      isScheduled: false,
+      category: "home",
+    },
+    {
+      id: "home-task-2",
+      title: "Laundry",
+      priority: "low",
+      details: "Wash and fold clothes",
+      color: "bg-green-400",
+      isScheduled: false,
+      category: "home",
+    },
+    {
+      id: "home-task-3",
+      title: "Pay Bills",
+      priority: "high",
+      details: "Pay electricity and water bills",
+      color: "bg-red-600",
+      isScheduled: false,
+      category: "home",
+    },
+  ],
+  work: [
+    {
+      id: "work-task-1",
+      title: "Complete Project",
+      priority: "high",
+      details: "Finish the project documentation and submit for review",
+      color: "bg-red-600",
+      isScheduled: false,
+      category: "work",
+    },
+    {
+      id: "work-task-2",
+      title: "Team Meeting",
+      priority: "medium",
+      details: "Weekly team sync to discuss progress and blockers",
+      color: "bg-orange-400",
+      isScheduled: false,
+      category: "work",
+    },
+    {
+      id: "work-task-3",
+      title: "Research",
+      priority: "low",
+      details: "Research new technologies for upcoming sprint",
+      color: "bg-green-400",
+      isScheduled: false,
+      category: "work",
+    },
+  ],
+  school: [
+    {
+      id: "school-task-1",
+      title: "Math Homework",
+      priority: "high",
+      details: "Complete calculus problems for tomorrow's class",
+      color: "bg-red-600",
+      isScheduled: false,
+      category: "school",
+    },
+    {
+      id: "school-task-2",
+      title: "Study Group",
+      priority: "medium",
+      details: "Meet with study group for upcoming exam",
+      color: "bg-orange-400",
+      isScheduled: false,
+      category: "school",
+    },
+    {
+      id: "school-task-3",
+      title: "Research Paper",
+      priority: "low",
+      details: "Start research for term paper due next month",
+      color: "bg-green-400",
+      isScheduled: false,
+      category: "school",
+    },
+  ],
+  // Initialize with Tech and Music projects
+  tech: [],
+  music: [],
+};
+
+// Initial projects for dropdown
+const initialProjects: Project[] = [
+  {
+    project: "Tech",
+    icon: "tech",
+    tasks: {},
+  },
+  {
+    project: "Music",
+    icon: "music",
+    tasks: {},
+  },
+];
+
 export default function LandingPage() {
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [scheduledTasks, setScheduledTasks] = useState<ScheduledTask[]>([]);
-  const [taskIdCounter, setTaskIdCounter] = useState(0);
+  const [activeCategory, setActiveCategory] = useState<TaskCategory>("home");
 
-  const fetchTasks = async () => {
-    try {
-      const res = await fetch("/api/tasks_data");
-      const data = await res.json();
+  const [allTasksData, setAllTasksData] = useState<
+    Record<TaskCategory, TaskWithSchedule[]>
+  >(JSON.parse(JSON.stringify(initialCategoryTasksData)));
 
-      setTasks(data);
-    } catch (err) {
-      console.error("Failed to fetch tasks:", err);
-    }
-  };
+  const [unscheduledTasks, setUnscheduledTasks] = useState<TaskWithSchedule[]>(
+    [],
+  );
 
-  useEffect(() => {
-    fetchTasks();
+  const [timetableTasks, setTimetableTasks] = useState<TimetableTask[]>([]);
+
+  const [taskIdCounter, setTaskIdCounter] = useState(4);
+
+  // State for projects - initialize once and don't reset on every render
+  const [projects, setProjects] = useState<Project[]>(initialProjects);
+
+  // Add a ref to access the BorderBox component's methods
+  const borderBoxRef = useRef<{
+    openModalWithTimeEdit: (taskData?: any) => void;
+  } | null>(null);
+
+  // Use useCallback for handlers to prevent recreation on every render
+  const handleCategoryChange = useCallback((category: TaskCategory) => {
+    setActiveCategory(category);
   }, []);
 
-  const generateId = () => {
-    const newId = `task-${Date.now()}-${taskIdCounter}`;
+  // Handle adding a new project from Header
+  const handleAddProject = useCallback((project: Project) => {
+    // Add the project to the projects state
+    setProjects((prev) => [...prev, project]);
 
-    setTaskIdCounter((prevCounter) => prevCounter + 1);
+    // Add the project to allTasksData with empty tasks array
+    const projectId = project.project.toLowerCase().replace(/\s+/g, "-");
+
+    setAllTasksData((prev) => ({
+      ...prev,
+      [projectId]: [], // Initialize with empty tasks array
+    }));
+
+    console.log(`Added new project category: ${projectId}`);
+  }, []);
+
+  // Update unscheduled tasks and timetable tasks when activeCategory or allTasksData changes
+  useEffect(() => {
+    setUnscheduledTasks(
+      allTasksData[activeCategory]?.filter((task) => !task.isScheduled) || [],
+    );
+
+    const scheduledTasks: TimetableTask[] = [];
+
+    Object.entries(allTasksData).forEach(([, tasks]) => {
+      tasks.forEach((task) => {
+        if (
+          task.isScheduled &&
+          task.day &&
+          task.startHour !== undefined &&
+          task.endHour !== undefined
+        ) {
+          scheduledTasks.push({
+            taskId: task.id,
+            category: task.category,
+            day: task.day,
+            startHour: task.startHour,
+            endHour: task.endHour,
+            task: {
+              id: task.id,
+              title: task.title,
+              details: task.details,
+              priority: task.priority,
+              color: task.color,
+            },
+          });
+        }
+      });
+    });
+
+    setTimetableTasks(scheduledTasks);
+  }, [activeCategory, allTasksData]);
+
+  const generateTaskId = useCallback(() => {
+    const newId = `${activeCategory}-task-${Date.now()}-${taskIdCounter}`;
+
+    setTaskIdCounter((prev) => prev + 1);
 
     return newId;
-  };
+  }, [activeCategory, taskIdCounter]);
 
-  const handleAddTask = async (taskData: Omit<Task, "id">) => {
-    const taskdb: Task = {
-      id: generateId(),
-      ...taskData,
-    };
+  // Add a function to handle task editing
+  const handleEditTask = useCallback(
+    (taskData: {
+      id: string;
+      startHour: number;
+      endHour: number;
+      day: string;
+      task?: Task;
+    }) => {
+      // If we have updated task data, update the task in allTasksData
+      if (taskData.task) {
+        // Find which category the task belongs to
+        let taskCategory: TaskCategory | null = null;
 
-    try {
-      const res = await fetch("/api/tasks_data", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(taskdb),
-      });
+        setAllTasksData((prev) => {
+          // Find the category within the current state
+          Object.entries(prev).forEach(([category, tasks]) => {
+            if (tasks.some((t) => t.id === taskData.id)) {
+              taskCategory = category as TaskCategory;
+            }
+          });
 
-      const newTask = await res.json();
+          if (!taskCategory) return prev; // No changes if category not found
 
-      setTasks([...tasks, newTask]);
-    } catch (err) {
-      console.error("Failed to add task:", err);
-    }
-  };
+          const newData = { ...prev };
+          const categoryTasks = [...newData[taskCategory]];
+          const taskIndex = categoryTasks.findIndex(
+            (t) => t.id === taskData.id,
+          );
 
-  const handleDeleteTasks = (updatedTasks: Task[]) => {
-    setTasks(updatedTasks); // Update the tasks state
-  };
+          if (taskIndex !== -1) {
+            categoryTasks[taskIndex] = {
+              ...categoryTasks[taskIndex],
+              title: taskData.task!.title,
+              details: taskData.task!.details,
+              priority: taskData.task!.priority,
+              color: taskData.task!.color,
+              day: taskData.day,
+              startHour: taskData.startHour,
+              endHour: taskData.endHour,
+            };
 
-  function extractHours(timeRange: string): {
-    startHour: number;
-    endHour: number;
-  } {
-    const match = timeRange.match(/^(\d+):\d+\s*-\s*(\d+):\d+/);
+            newData[taskCategory] = categoryTasks;
+          }
 
-    if (!match) {
-      throw new Error("Invalid time range format");
-    }
+          return newData;
+        });
 
-    const startHour = parseInt(match[1], 10);
-    const endHour = parseInt(match[2], 10);
-
-    return { startHour, endHour };
-  }
-
-  const handleTaskDrop = (
-    taskId: string,
-    day: string,
-    startHour: number,
-    endHour: number,
-  ) => {
-    const existingScheduledTaskIndex = scheduledTasks.findIndex(
-      (st) => st.taskId === taskId,
-    );
-
-    // Check if any time slot in the range is already occupied by another task
-    const isRangeOccupied = scheduledTasks.some(
-      (task) =>
-        task.taskId !== taskId && // Don't check against itself
-        task.day === day &&
-        ((task.startHour <= startHour && task.endHour > startHour) || // Overlaps with start
-          (task.startHour < endHour && task.endHour >= endHour) || // Overlaps with end
-          (task.startHour >= startHour && task.endHour <= endHour)), // Contained within
-    );
-
-    if (isRangeOccupied) {
-      console.log("Cannot place task: time slot(s) already occupied");
-
-      return;
-    }
-
-    if (existingScheduledTaskIndex !== -1) {
-      // Task is already scheduled, just update its position
-      setScheduledTasks(
-        scheduledTasks.map((st, index) =>
-          index === existingScheduledTaskIndex
-            ? { ...st, day, startHour, endHour }
-            : st,
-        ),
-      );
-    } else {
-      // Task is coming from the BorderBox
-      const task = tasks.find((t) => t.id === taskId);
-
-      if (task) {
-        setScheduledTasks([
-          ...scheduledTasks,
-          { taskId, day, startHour, endHour, task },
-        ]);
-        setTasks(tasks.filter((t) => t.id !== taskId));
+        // No need to open the BorderBox modal if we've already updated the task
+        return;
       }
-    }
-  };
 
-  const handleTaskResize = (taskId: string, newEndHour: number) => {
-    const task = scheduledTasks.find((t) => t.taskId === taskId);
+      // If no task data or category not found, fall back to the BorderBox modal
+      if (borderBoxRef.current) {
+        borderBoxRef.current.openModalWithTimeEdit(taskData);
+      }
+    },
+    [],
+  );
 
-    if (!task) return;
+  // function for Add a task
+  const handleAddTask = useCallback(
+    (taskData: Omit<Task, "id">) => {
+      const newId = generateTaskId();
 
-    // Check if the new size would overlap with other tasks
-    const isRangeOccupied = scheduledTasks.some(
-      (t) =>
-        t.taskId !== taskId && // Don't check against itself
-        t.day === task.day &&
-        t.startHour < newEndHour &&
-        t.startHour >= task.startHour + 1,
-    );
+      const newTask: TaskWithSchedule = {
+        id: newId,
+        ...taskData,
+        isScheduled: false,
+        category: activeCategory,
+      };
 
-    if (isRangeOccupied) {
-      console.log("Cannot resize task: would overlap with another task");
+      // store it in unscheduled task by default
+      setUnscheduledTasks((prev) => [...prev, newTask]);
 
-      return;
-    }
+      // add to main database
+      setAllTasksData((prev) => ({
+        ...prev,
+        [activeCategory]: [...(prev[activeCategory] || []), newTask],
+      }));
+    },
+    [activeCategory, generateTaskId],
+  );
 
-    setScheduledTasks((prev) =>
-      prev.map((t) =>
-        t.taskId === taskId
-          ? { ...t, endHour: Math.max(t.startHour + 1, newEndHour) }
-          : t,
-      ),
-    );
-  };
+  // Delete tasks
+  const handleDeleteTasks = useCallback(
+    (updatedTasks: Task[]) => {
+      // Convert to TaskWithSchedule
+      const convertedTasks = updatedTasks.map((task) => ({
+        ...task,
+        isScheduled: false,
+        category: activeCategory,
+      })) as TaskWithSchedule[];
 
-  const handleRetractTask = async (taskId: string) => {
-    const scheduledTask = scheduledTasks.find((st) => st.taskId === taskId);
-    const taskData = { id: taskId, day: null, time_range: null };
+      // Update local unscheduled tasks
+      setUnscheduledTasks(convertedTasks);
 
-    try {
-      const response = await fetch("/api/tasks_data", {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(taskData),
+      // Update all tasks data - keep scheduled tasks and replace unscheduled ones
+      setAllTasksData((prev) => {
+        const scheduledTasks =
+          prev[activeCategory]?.filter((task) => task.isScheduled) || [];
+
+        return {
+          ...prev,
+          [activeCategory]: [...convertedTasks, ...scheduledTasks],
+        };
+      });
+    },
+    [activeCategory],
+  );
+
+  // Handle dropping a task on the timetable
+  const handleTaskDrop = useCallback(
+    (
+      taskId: string,
+      day: string,
+      startHour: number,
+      endHour: number,
+      taskData?: {
+        title: string;
+        details: string;
+        priority: string;
+        color: string;
+      },
+    ) => {
+      // Check if task is already in timetable
+      setTimetableTasks((prevTimetableTasks) => {
+        const existingTask = prevTimetableTasks.find(
+          (tt) => tt.taskId === taskId,
+        );
+
+        // time slot lock
+        const isTimeSlotOccupied = prevTimetableTasks.some(
+          (task) =>
+            task.taskId !== taskId &&
+            task.day === day &&
+            ((task.startHour <= startHour && task.endHour > startHour) ||
+              (task.startHour < endHour && task.endHour >= endHour) ||
+              (task.startHour >= startHour && task.endHour <= endHour)),
+        );
+
+        if (isTimeSlotOccupied) {
+          console.log("Cannot place task: time slot(s) already occupied");
+
+          return prevTimetableTasks; // Return unchanged
+        }
+
+        if (existingTask) {
+          // ability to move task that are scheduled
+          setAllTasksData((prev) => {
+            const newData = { ...prev };
+
+            const categoryTasks = [...newData[existingTask.category]];
+            const taskIndex = categoryTasks.findIndex((t) => t.id === taskId);
+
+            if (taskIndex !== -1) {
+              categoryTasks[taskIndex] = {
+                ...categoryTasks[taskIndex],
+                day,
+                startHour,
+                endHour,
+                // Update task details if provided
+                ...(taskData && {
+                  title: taskData.title,
+                  details: taskData.details,
+                  priority: taskData.priority,
+                  color: taskData.color,
+                }),
+              };
+
+              newData[existingTask.category] = categoryTasks;
+            }
+
+            return newData;
+          });
+        } else {
+          setAllTasksData((prev) => {
+            let taskCategory: TaskCategory | null = null;
+            let taskToSchedule: TaskWithSchedule | null = null;
+
+            // Find the task and its category
+            Object.entries(prev).forEach(([category, tasks]) => {
+              const task = tasks.find((t) => t.id === taskId);
+
+              if (task) {
+                taskCategory = category as TaskCategory;
+                taskToSchedule = task;
+              }
+            });
+
+            if (!taskCategory || !taskToSchedule) return prev; // No changes if task not found
+
+            const newData = { ...prev };
+            const categoryTasks = [...newData[taskCategory]];
+            const taskIndex = categoryTasks.findIndex((t) => t.id === taskId);
+
+            if (taskIndex !== -1) {
+              categoryTasks[taskIndex] = {
+                ...categoryTasks[taskIndex],
+                isScheduled: true,
+                day,
+                startHour,
+                endHour,
+                // Update task details if provided
+                ...(taskData && {
+                  title: taskData.title,
+                  details: taskData.details,
+                  priority: taskData.priority,
+                  color: taskData.color,
+                }),
+              };
+
+              newData[taskCategory] = categoryTasks;
+            }
+
+            return newData;
+          });
+
+          // Find the task category outside the setAllTasksData callback
+          let foundTaskCategory: TaskCategory | null = null;
+
+          // Find which category the task belongs to
+          Object.entries(allTasksData).forEach(([category, tasks]) => {
+            if (tasks.some((t) => t.id === taskId)) {
+              foundTaskCategory = category as TaskCategory;
+            }
+          });
+
+          // handle task box not reloading the category avoiding duping
+          if (foundTaskCategory && activeCategory === foundTaskCategory) {
+            setUnscheduledTasks((prev) => prev.filter((t) => t.id !== taskId));
+          }
+        }
+
+        return prevTimetableTasks; // Return unchanged, the useEffect will update it
+      });
+    },
+    [activeCategory, allTasksData],
+  );
+
+  // Handle resizing a task in the timetable
+  const handleTaskResize = useCallback(
+    (taskId: string, newEndHour: number) => {
+      const task = timetableTasks.find((t) => t.taskId === taskId);
+
+      if (!task) return;
+
+      // overlap check
+      const isOverlapping = timetableTasks.some(
+        (t) =>
+          t.taskId !== taskId &&
+          t.day === task.day &&
+          t.startHour < newEndHour &&
+          t.startHour >= task.startHour + 1,
+      );
+
+      if (isOverlapping) {
+        console.log("Cannot resize task: would overlap with another task");
+
+        return;
+      }
+
+      // Update time frame
+      setAllTasksData((prev) => {
+        const newData = { ...prev };
+        const categoryTasks = [...newData[task.category]];
+        const taskIndex = categoryTasks.findIndex((t) => t.id === taskId);
+
+        if (taskIndex !== -1) {
+          categoryTasks[taskIndex] = {
+            ...categoryTasks[taskIndex],
+            endHour: Math.max(task.startHour + 1, newEndHour),
+          };
+
+          newData[task.category] = categoryTasks;
+        }
+
+        return newData;
+      });
+    },
+    [timetableTasks],
+  );
+
+  // handle returning a task from the timetable to the task list
+  const handleReturnTaskToList = useCallback(
+    (taskId: string) => {
+      const scheduledTask = timetableTasks.find((tt) => tt.taskId === taskId);
+
+      if (!scheduledTask) return;
+
+      // update the task in its category regardless of active category
+      setAllTasksData((prev) => {
+        const newData = { ...prev };
+        const categoryTasks = [...newData[scheduledTask.category]];
+        const taskIndex = categoryTasks.findIndex((t) => t.id === taskId);
+
+        if (taskIndex !== -1) {
+          categoryTasks[taskIndex] = {
+            ...categoryTasks[taskIndex],
+            isScheduled: false,
+            day: undefined,
+            startHour: undefined,
+            endHour: undefined,
+          };
+
+          newData[scheduledTask.category] = categoryTasks;
+        }
+
+        return newData;
       });
 
-      const result = await response.json();
-
-      console.log("Server Response:", result);
-    } catch (error) {
-      console.error("Error updating task:", error);
-    }
-
-    if (!scheduledTask) return;
-
-    // Remove from scheduled tasks
-    setScheduledTasks(scheduledTasks.filter((st) => st.taskId !== taskId));
-
-    // Add back to unscheduled tasks
-    setTasks([...tasks, scheduledTask.task]);
-  };
+      // Only update unscheduledTasks if the task belongs to the active category
+      if (scheduledTask.category === activeCategory) {
+        // Instead of adding to unscheduledTasks directly, let the useEffect handle it
+        // This prevents duplicate tasks with the same ID
+        console.log(
+          `Task ${taskId} returned to ${scheduledTask.category} category`,
+        );
+      }
+    },
+    [activeCategory, timetableTasks],
+  );
 
   return (
-    <div>
-      <Header />
-      <div className="flex pt-2 w-full pr-5">
+    <div className="flex flex-col h-screen overflow-hidden">
+      <Header
+        activeCategory={activeCategory}
+        initialProjects={projects}
+        onAddProject={handleAddProject}
+        onCategoryChange={handleCategoryChange}
+      />
+      <div className="flex pt-2 w-full pr-5 flex-1 overflow-hidden">
         <div className="flex flex-col">
           <BorderBox
-            tasks={tasks}
+            ref={borderBoxRef}
+            tasks={unscheduledTasks}
             onAddTask={handleAddTask}
             onDeleteTasks={handleDeleteTasks}
           />
@@ -206,8 +567,9 @@ export default function LandingPage() {
           </div>
         </div>
         <BorderlessBox
-          scheduledTasks={scheduledTasks}
-          onRetractTask={handleRetractTask}
+          scheduledTasks={timetableTasks}
+          onEditTask={handleEditTask}
+          onRetractTask={handleReturnTaskToList}
           onTaskDrop={handleTaskDrop}
           onTaskResize={handleTaskResize}
         />
