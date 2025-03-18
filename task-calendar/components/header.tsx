@@ -3,7 +3,7 @@
 
 import type React from "react";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   Dropdown,
   DropdownItem,
@@ -177,6 +177,31 @@ export default function Header({
     // Log for debugging
     console.log("New category saved:", newProject);
   };
+  // Get the active project name based on the activeCategory
+  const activeProjectName = useMemo(() => {
+    // First check in active buttons
+    const activeButton = activeButtons.find(
+      (button) => button.id === activeCategory,
+    );
+
+    if (activeButton) {
+      return activeButton.name;
+    }
+
+    // If not found in active buttons, check in projects
+    const projectId = activeCategory;
+    const matchingProject = projects.find(
+      (project) =>
+        project.project.toLowerCase().replace(/\s+/g, "-") === projectId,
+    );
+
+    if (matchingProject) {
+      return matchingProject.project;
+    }
+
+    // Capitalize first letter as fallback
+    return activeCategory.charAt(0).toUpperCase() + activeCategory.slice(1);
+  }, [activeCategory, activeButtons, projects]);
 
   return (
     <header className="flex items-center justify-between border-gray-300 px-5">
@@ -267,6 +292,16 @@ export default function Header({
           {is24Hour ? <Clock12Icon /> : <Clock24Icon />}
         </button>
         <Clock is24Hour={is24Hour} />
+
+        {/* Project Title Display */}
+        <div className="flex-1 flex justify-center">
+          <div className="bg-gray-100 px-4 py-2 rounded-lg shadow-sm">
+            <h2 className="text-lg font-semibold text-gray-800">
+              Project:{" "}
+              <span className="text-blue-600">{activeProjectName}</span>
+            </h2>
+          </div>
+        </div>
       </div>
 
       {/* Right Side: Dropdown */}
