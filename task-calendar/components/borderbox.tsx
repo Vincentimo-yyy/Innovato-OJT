@@ -23,16 +23,13 @@ export interface Task {
   color: string;
 }
 
-// Add timeEditToggle state
-// Modify the props interface to include the new function
 interface BorderBoxProps {
   tasks: Task[];
   onAddTask: (task: Omit<Task, "id">) => void;
   onDeleteTasks: (updatedTasks: Task[]) => void;
-  openModalWithTimeEdit?: () => void; // Add this prop
+  openModalWithTimeEdit?: () => void;
 }
 
-// Export the openModalWithTimeEdit function
 export type { BorderBoxProps };
 
 const BorderBox = forwardRef<
@@ -53,41 +50,37 @@ const BorderBox = forwardRef<
 
   const toggleSelectAll = () => {
     if (selectedTasks.length === tasks.length) {
-      setSelectedTasks([]); // Unselect all
+      setSelectedTasks([]);
     } else {
-      setSelectedTasks(tasks.map((task) => task.id)); // Select all
+      setSelectedTasks(tasks.map((task) => task.id));
     }
   };
 
   const toggleTaskSelection = (taskId: string) => {
-    setSelectedTasks(
-      (prevSelected) =>
-        prevSelected.includes(taskId)
-          ? prevSelected.filter((id) => id !== taskId) // Unselect
-          : [...prevSelected, taskId], // Select
+    setSelectedTasks((prevSelected) =>
+      prevSelected.includes(taskId)
+        ? prevSelected.filter((id) => id !== taskId)
+        : [...prevSelected, taskId],
     );
   };
 
   const deleteSelectedTasks = () => {
-    // Update local state after deletion
     const updatedTasks = tasks.filter(
       (task) => !selectedTasks.includes(task.id),
     );
 
-    setSelectedTasks([]); // Clear selection
-    onDeleteTasks(updatedTasks); // Pass new list to parent
+    setSelectedTasks([]);
+    onDeleteTasks(updatedTasks);
   };
 
   // Expose the openModalWithTimeEdit function via ref
   useImperativeHandle(ref, () => ({
     openModalWithTimeEdit: (taskData?: TaskTimeData) => {
       setEditingTaskData(taskData ?? null);
-      // If we have task data, we could also pre-fill the task details
       if (taskData?.id) {
         const task = tasks.find((t) => t.id === taskData.id);
 
         if (task) {
-          // We'll pass the task data to the modal
           onAddTaskOpen();
         }
       } else {
@@ -104,7 +97,7 @@ const BorderBox = forwardRef<
   return (
     <div className="px-6">
       <div
-        className="w-[300px] border-2 border-gray-300 shadow-md rounded-lg p-4 relative"
+        className="w-[300px] border-2 border-gray-300 dark:border-gray-700 shadow-md rounded-lg p-4 relative bg-white dark:bg-gray-800"
         style={{ height: "calc(103vh - 180px)" }}
       >
         <div
@@ -116,7 +109,7 @@ const BorderBox = forwardRef<
             <ExpandIcon fillOpacity={isHovered ? "1" : "0.5"} />
           </button>
         </div>
-        <p className="text-center text-[24px] text-gray-700 border-b-2 border-gray-300 pb-2">
+        <p className="text-center text-[24px] text-gray-700 dark:text-gray-200 border-b-2 border-gray-300 dark:border-gray-700 pb-2">
           Task
         </p>
 
@@ -150,13 +143,12 @@ const BorderBox = forwardRef<
 
         {/* Add Task Button */}
         <button
-          className="w-10 h-10 bg-gray-500 rounded-full flex items-center justify-center hover:bg-green-600 absolute bottom-5 right-5"
+          className="w-10 h-10 bg-gray-500 dark:bg-gray-600 rounded-full flex items-center justify-center hover:bg-green-600 dark:hover:bg-green-500 absolute bottom-5 right-5"
           onClick={onAddTaskOpen}
         >
           <AddIcon />
         </button>
 
-        {/* Task Form Modal - now using our new component */}
         <TaskFormModal
           initialValues={
             editingTask
@@ -177,9 +169,8 @@ const BorderBox = forwardRef<
           isOpen={isExpandedOpen}
           onClose={() => setIsExpandedOpen(false)}
         >
-          <div className="flex flex-col w-[40vw] h-[80vh]">
-            {/* Title Section - FIXED */}
-            <h2 className="text-xl font-semibold border-b-2 pb-2">
+          <div className="flex flex-col w-[40vw] h-[80vh] bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100">
+            <h2 className="text-xl font-semibold border-b-2 border-gray-300 dark:border-gray-700 pb-2">
               List of Tasks
             </h2>
 

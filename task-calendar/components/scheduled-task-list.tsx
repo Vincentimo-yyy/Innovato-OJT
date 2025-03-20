@@ -9,7 +9,7 @@ import { ArrowLeft } from "lucide-react";
 
 interface ScheduledTask {
   taskId: string;
-  category?: string; // Added category to display in the UI
+  category?: string;
   day: string;
   startHour: number;
   endHour: number;
@@ -42,7 +42,6 @@ export function ScheduledTaskList({
       const deltaY = e.pageY - startY.current;
 
       const newHeight = Math.max(52, startHeight.current + deltaY);
-      // Calculate how many hours to add based on the height change
       const hourDelta = Math.floor((newHeight - 52) / 60);
       const newEndHour = currentTask.current!.startHour + 1 + hourDelta;
 
@@ -73,7 +72,6 @@ export function ScheduledTaskList({
     e.preventDefault();
     e.stopPropagation();
 
-    // Store the starting position and task
     startY.current = e.pageY;
     currentTask.current = task;
 
@@ -168,7 +166,6 @@ export function ScheduledTaskList({
               </button>
             </div>
 
-            {/* Accessible resize handle */}
             <button
               aria-label="Resize task"
               aria-valuemax={24}

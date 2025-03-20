@@ -12,11 +12,11 @@ import {
 } from "@heroui/react";
 import { Time } from "@internationalized/date";
 import { format } from "date-fns";
+import { useTheme } from "next-themes";
 
 import { SubmitIcon } from "./icons";
 import { taskTypes } from "./borderbox";
 
-// Interface for task time data
 export interface TaskTimeData {
   id?: string;
   startHour?: number;
@@ -56,6 +56,8 @@ export function TaskFormModal({
   const [taskPriority, setTaskPriority] = useState(
     initialValues.priority || taskTypes[0].key,
   );
+  const { theme } = useTheme();
+  const [mounted, setMounted] = useState(false);
 
   // Add state for time values
   const [startTime, setStartTime] = useState<Time | null>(null);
@@ -65,15 +67,18 @@ export function TaskFormModal({
   const today = format(now, "MMMM d, yyyy");
   const [day, setDay] = useState(timeEditData?.day || today);
 
+  // Avoid hydration mismatch by only rendering after mount
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   // Reset form when modal opens with new data
   useEffect(() => {
     if (isOpen) {
-      // Only reset the form when the modal first opens
       setTaskTitle(initialValues?.title || "");
       setTaskDetails(initialValues?.details || "");
       setTaskPriority(initialValues?.priority || taskTypes[0].key);
 
-      // Set time values from timeEditData
       if (timeEditData) {
         setDay(timeEditData.day || today);
 
@@ -96,12 +101,10 @@ export function TaskFormModal({
         }
       }
     }
-  }, [isOpen]); // Only depend on isOpen, not on the other values
+  }, [isOpen]);
 
-  // Add a separate effect to handle initialValues changes
   useEffect(() => {
     if (isOpen && initialValues) {
-      // Update form when initialValues change and modal is open
       if (initialValues.title !== undefined) {
         setTaskTitle(initialValues.title);
       }
@@ -114,10 +117,8 @@ export function TaskFormModal({
     }
   }, [isOpen, initialValues]);
 
-  // Add a separate effect to handle timeEditData changes
   useEffect(() => {
     if (isOpen && timeEditData) {
-      // Update time values when timeEditData changes and modal is open
       setDay(timeEditData.day || today);
 
       if (timeEditData.startHour !== undefined) {
@@ -140,15 +141,12 @@ export function TaskFormModal({
     }
   }, [isOpen, timeEditData, today]);
 
-  // Function to add new task
   const handleSubmit = () => {
-    if (!taskTitle.trim()) return; // Check if title is empty
+    if (!taskTitle.trim()) return;
 
-    // Get priority color
     const taskType =
       taskTypes.find((t) => t.key === taskPriority) || taskTypes[0];
 
-    // Convert Time objects to hour numbers, properly handling minutes
     let startHour: number | undefined = undefined;
     let endHour: number | undefined = undefined;
 
@@ -160,7 +158,6 @@ export function TaskFormModal({
       endHour = endTime.hour + endTime.minute / 60;
     }
 
-    // Submit task through parent component with time data
     onSubmit({
       title: taskTitle,
       details: taskDetails,
@@ -171,7 +168,6 @@ export function TaskFormModal({
       day: timeEditData?.day !== undefined ? day : undefined,
     });
 
-    // Reset fields
     setTaskTitle("");
     setTaskDetails("");
     setTaskPriority(taskTypes[0].key);
@@ -212,7 +208,7 @@ export function TaskFormModal({
             className="w-full"
             label="Task Title"
             placeholder="Enter Title"
-            type="text" // Changed from "Title" to "text"
+            type="text"
             value={taskTitle}
             onChange={(e) => {
               setTaskTitle(e.target.value);
@@ -228,7 +224,6 @@ export function TaskFormModal({
             }}
           />
           <div className="flex flex-row items-center">
-            {/*time edit */}
             <div
               className={`items-center space-x-2 ${timeEditData ? "flex" : "hidden"}`}
             >
@@ -269,7 +264,11 @@ export function TaskFormModal({
               className="ml-auto w-[25px] h-[25px] rounded-full flex items-center hover:-rotate-45 transition-transform duration-500"
               onClick={handleSubmit}
             >
-              <SubmitIcon height="25" width="25" />
+              <SubmitIcon
+                fill={mounted && theme === "dark" ? "white" : "black"}
+                height="25"
+                width="25"
+              />
             </button>
           </div>
         </ModalBody>

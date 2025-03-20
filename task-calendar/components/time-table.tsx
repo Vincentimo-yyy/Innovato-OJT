@@ -256,7 +256,6 @@ export default function BorderlessBox({
     setEditingTask(null);
   };
 
-  // Simplified time slot generation
   const getTimeSlots = (day: string): TimeSlot[] => {
     // Create basic hourly slots
     const hourlySlots: TimeSlot[] = Array.from({ length: 24 }, (_, i) => ({
@@ -275,7 +274,6 @@ export default function BorderlessBox({
     // Create a map of slots with tasks
     const result: TimeSlot[] = [];
 
-    // Process each hour
     for (let hour = 1; hour <= 24; hour++) {
       // Find tasks that start in this hour
       const tasksStartingInThisHour = dayTasks.filter(
@@ -295,9 +293,7 @@ export default function BorderlessBox({
       );
 
       if (tasksStartingInThisHour.length > 0) {
-        // Handle tasks that start in this hour
         for (const task of tasksStartingInThisHour) {
-          // If task starts after the hour, add a gap slot
           if (task.startHour > hour) {
             result.push({
               startHour: hour,
@@ -306,14 +302,12 @@ export default function BorderlessBox({
             });
           }
 
-          // Add the task slot
           result.push({
             startHour: task.startHour,
             endHour: task.endHour,
             tasks: [task],
           });
 
-          // If task ends with a partial hour, add a slot to the next hour
           if (Math.floor(task.endHour) === hour && task.endHour < hour + 1) {
             result.push({
               startHour: task.endHour,
@@ -323,9 +317,7 @@ export default function BorderlessBox({
           }
         }
       } else if (tasksEndingInThisHour.length > 0) {
-        // Handle tasks that end in this hour but started earlier
         for (const task of tasksEndingInThisHour) {
-          // Add a slot from the end of the task to the next hour
           if (task.endHour < hour + 1) {
             result.push({
               startHour: task.endHour,
@@ -335,14 +327,12 @@ export default function BorderlessBox({
           }
         }
       } else if (overlappingTasks.length === 0) {
-        // No tasks in this hour, add a regular hourly slot
         result.push({
           startHour: hour,
           endHour: hour + 1,
           tasks: [],
         });
       }
-      // Skip hours that are completely covered by tasks
     }
 
     return result;
@@ -362,7 +352,7 @@ export default function BorderlessBox({
   return (
     <div
       ref={containerRef}
-      className="w-full border-t border-gray-300 overflow-y-auto bg-white"
+      className="w-full border-t border-gray-300 dark:border-gray-700 overflow-y-auto bg-white dark:bg-gray-900"
       style={{ maxHeight: containerHeight }}
     >
       <TaskFormModal
@@ -381,11 +371,13 @@ export default function BorderlessBox({
         onSubmit={handleTaskFormSubmit}
       />
 
-      <div className="grid grid-cols-3 divide-x divide-gray-300">
+      <div className="grid grid-cols-3 divide-x divide-gray-300 dark:divide-gray-700">
         {days.map(({ day, date }) => (
           <div key={date} className="flex flex-col">
-            <h2 className="text-center text-[18px]">{day}</h2>
-            <h2 className="text-center font-semibold text-[32px] leading-none">
+            <h2 className="text-center text-[18px] dark:text-gray-200">
+              {day}
+            </h2>
+            <h2 className="text-center font-semibold text-[32px] leading-none dark:text-gray-100">
               {date}
             </h2>
 
@@ -398,8 +390,8 @@ export default function BorderlessBox({
                 return (
                   <div
                     key={`${day}-${slot.startHour}`}
-                    className={`border-t border-gray-300 text-[12px] text-gray-700 px-4 py-3 transition-colors bg-white
-                      ${isErrorSlot ? "bg-red-100" : ""}
+                    className={`border-t border-gray-300 dark:border-gray-700 text-[12px] text-gray-700 dark:text-gray-300 px-4 py-3 transition-colors bg-white dark:bg-gray-800
+                      ${isErrorSlot ? "bg-red-100 dark:bg-red-900" : ""}
                       ${slot.endHour - slot.startHour > 1 ? "min-h-[" + (slot.endHour - slot.startHour) * 60 + "px]" : "min-h-[60px]"}`}
                     onDragLeave={handleDragLeave}
                     onDragOver={!hasTask ? handleDragOver : undefined}

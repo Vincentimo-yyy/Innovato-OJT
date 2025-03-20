@@ -6,7 +6,6 @@ import Header, { type TaskCategory, type Project } from "@/components/header";
 import BorderlessBox from "@/components/time-table";
 import InputBar from "@/components/inputbar";
 
-// Base task interface
 export interface TaskWithSchedule extends Task {
   isScheduled: boolean;
   category: TaskCategory;
@@ -15,7 +14,6 @@ export interface TaskWithSchedule extends Task {
   endHour?: number;
 }
 
-// Scheduled task representation for the timetable
 interface TimetableTask {
   taskId: string;
   category: TaskCategory;
@@ -25,7 +23,6 @@ interface TimetableTask {
   task: Task;
 }
 
-// Task database simulation - initial data
 const initialCategoryTasksData: Record<TaskCategory, TaskWithSchedule[]> = {
   home: [
     {
@@ -114,7 +111,6 @@ const initialCategoryTasksData: Record<TaskCategory, TaskWithSchedule[]> = {
       category: "school",
     },
   ],
-  // Initialize with Tech and Music projects
   tech: [],
   music: [],
 };
@@ -163,15 +159,13 @@ export default function LandingPage() {
 
   // Handle adding a new project from Header
   const handleAddProject = useCallback((project: Project) => {
-    // Add the project to the projects state
     setProjects((prev) => [...prev, project]);
 
-    // Add the project to allTasksData with empty tasks array
     const projectId = project.project.toLowerCase().replace(/\s+/g, "-");
 
     setAllTasksData((prev) => ({
       ...prev,
-      [projectId]: [], // Initialize with empty tasks array
+      [projectId]: [],
     }));
   }, []);
 
@@ -229,20 +223,17 @@ export default function LandingPage() {
       day: string;
       task?: Task;
     }) => {
-      // If we have updated task data, update the task in allTasksData
       if (taskData.task) {
-        // Find which category the task belongs to
         let taskCategory: TaskCategory | null = null;
 
         setAllTasksData((prev) => {
-          // Find the category within the current state
           Object.entries(prev).forEach(([category, tasks]) => {
             if (tasks.some((t) => t.id === taskData.id)) {
               taskCategory = category as TaskCategory;
             }
           });
 
-          if (!taskCategory) return prev; // No changes if category not found
+          if (!taskCategory) return prev;
 
           const newData = { ...prev };
           const categoryTasks = [...newData[taskCategory]];
@@ -268,11 +259,9 @@ export default function LandingPage() {
           return newData;
         });
 
-        // No need to open the BorderBox modal if we've already updated the task
         return;
       }
 
-      // If no task data or category not found, fall back to the BorderBox modal
       if (borderBoxRef.current) {
         borderBoxRef.current.openModalWithTimeEdit(taskData);
       }
@@ -280,7 +269,7 @@ export default function LandingPage() {
     [],
   );
 
-  // function for Add a task
+  // Function for Add a task
   const handleAddTask = useCallback(
     (taskData: Omit<Task, "id">) => {
       const newId = generateTaskId();
@@ -292,10 +281,8 @@ export default function LandingPage() {
         category: activeCategory,
       };
 
-      // store it in unscheduled task by default
       setUnscheduledTasks((prev) => [...prev, newTask]);
 
-      // add to main database
       setAllTasksData((prev) => ({
         ...prev,
         [activeCategory]: [...(prev[activeCategory] || []), newTask],
@@ -307,17 +294,14 @@ export default function LandingPage() {
   // Delete tasks
   const handleDeleteTasks = useCallback(
     (updatedTasks: Task[]) => {
-      // Convert to TaskWithSchedule
       const convertedTasks = updatedTasks.map((task) => ({
         ...task,
         isScheduled: false,
         category: activeCategory,
       })) as TaskWithSchedule[];
 
-      // Update local unscheduled tasks
       setUnscheduledTasks(convertedTasks);
 
-      // Update all tasks data - keep scheduled tasks and replace unscheduled ones
       setAllTasksData((prev) => {
         const scheduledTasks =
           prev[activeCategory]?.filter((task) => task.isScheduled) || [];
@@ -345,13 +329,12 @@ export default function LandingPage() {
         color: string;
       },
     ) => {
-      // Check if task is already in timetable
       setTimetableTasks((prevTimetableTasks) => {
         const existingTask = prevTimetableTasks.find(
           (tt) => tt.taskId === taskId,
         );
 
-        // time slot lock
+        // Time slot lock
         const isTimeSlotOccupied = prevTimetableTasks.some(
           (task) =>
             task.taskId !== taskId &&
@@ -362,11 +345,11 @@ export default function LandingPage() {
         );
 
         if (isTimeSlotOccupied) {
-          return prevTimetableTasks; // Return unchanged
+          return prevTimetableTasks;
         }
 
         if (existingTask) {
-          // ability to move task that are scheduled
+          // Ability to move task that are scheduled
           setAllTasksData((prev) => {
             const newData = { ...prev };
 
@@ -379,7 +362,6 @@ export default function LandingPage() {
                 day,
                 startHour,
                 endHour,
-                // Update task details if provided
                 ...(taskData && {
                   title: taskData.title,
                   details: taskData.details,
@@ -408,7 +390,7 @@ export default function LandingPage() {
               }
             });
 
-            if (!taskCategory || !taskToSchedule) return prev; // No changes if task not found
+            if (!taskCategory || !taskToSchedule) return prev;
 
             const newData = { ...prev };
             const categoryTasks = [...newData[taskCategory]];
@@ -421,7 +403,6 @@ export default function LandingPage() {
                 day,
                 startHour,
                 endHour,
-                // Update task details if provided
                 ...(taskData && {
                   title: taskData.title,
                   details: taskData.details,
@@ -446,13 +427,13 @@ export default function LandingPage() {
             }
           });
 
-          // handle task box not reloading the category avoiding duping
+          // Handle task box not reloading the category avoiding duping
           if (foundTaskCategory && activeCategory === foundTaskCategory) {
             setUnscheduledTasks((prev) => prev.filter((t) => t.id !== taskId));
           }
         }
 
-        return prevTimetableTasks; // Return unchanged, the useEffect will update it
+        return prevTimetableTasks;
       });
     },
     [activeCategory, allTasksData],
@@ -465,7 +446,7 @@ export default function LandingPage() {
 
       if (!task) return;
 
-      // overlap check
+      // Overlap check
       const isOverlapping = timetableTasks.some(
         (t) =>
           t.taskId !== taskId &&
@@ -499,14 +480,13 @@ export default function LandingPage() {
     [timetableTasks],
   );
 
-  // handle returning a task from the timetable to the task list
+  // Handle returning a task from the timetable to the task list
   const handleReturnTaskToList = useCallback(
     (taskId: string) => {
       const scheduledTask = timetableTasks.find((tt) => tt.taskId === taskId);
 
       if (!scheduledTask) return;
 
-      // update the task in its category regardless of active category
       setAllTasksData((prev) => {
         const newData = { ...prev };
         const categoryTasks = [...newData[scheduledTask.category]];
@@ -527,17 +507,14 @@ export default function LandingPage() {
         return newData;
       });
 
-      // Only update unscheduledTasks if the task belongs to the active category
       if (scheduledTask.category === activeCategory) {
-        // Instead of adding to unscheduledTasks directly, let the useEffect handle it
-        // This prevents duplicate tasks with the same ID
       }
     },
     [activeCategory, timetableTasks],
   );
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden">
+    <div className="flex flex-col h-screen overflow-hidden bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100">
       <Header
         activeCategory={activeCategory}
         initialProjects={projects}

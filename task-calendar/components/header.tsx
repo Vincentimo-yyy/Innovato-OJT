@@ -1,8 +1,6 @@
 /* eslint-disable no-console */
 "use client";
 
-import type React from "react";
-
 import { useState, useEffect, useMemo } from "react";
 import {
   Dropdown,
@@ -10,8 +8,10 @@ import {
   DropdownMenu,
   DropdownTrigger,
 } from "@heroui/react";
+import { useTheme } from "next-themes";
 
 import DropdownComponent from "./userdropdown";
+import { ThemeToggle } from "./theme-toggle";
 import {
   MenuIcon,
   AddIcon,
@@ -52,24 +52,9 @@ interface ActiveButton {
 interface HeaderProps {
   activeCategory: TaskCategory;
   onCategoryChange: (category: TaskCategory) => void;
-  onAddProject: (project: Project) => void; // New prop to pass project to parent
-  initialProjects?: Project[]; // New prop to receive initial projects from parent
+  onAddProject: (project: Project) => void;
+  initialProjects?: Project[];
 }
-
-// Map of icon IDs to icon components
-const iconMap: Record<string, React.ReactNode> = {
-  briefcase: <WorkIcon />,
-  money: <MoneyIcon />,
-  pencil: <SchoolIcon />,
-  tech: <TechIcon />,
-  home: <HomeIcon />,
-  health: <HealthIcon />,
-  music: <MusicIcon />,
-  camera: <CameraIcon />,
-  code: <CodeIcon />,
-  game: <GameIcon />,
-  palette: <PaletteIcon />,
-};
 
 export default function Header({
   activeCategory,
@@ -77,9 +62,44 @@ export default function Header({
   onAddProject,
   initialProjects = [],
 }: HeaderProps) {
+  const [iconFill, setIconFill] = useState<string>("#1A1A1A");
+  const { theme } = useTheme();
   const [isOpen, setIsOpen] = useState(false);
   const [isAddCategoryModalOpen, setIsAddCategoryModalOpen] = useState(false);
-  const [is24Hour, setIs24Hour] = useState<boolean>(false); // Add state for time format
+  const [is24Hour, setIs24Hour] = useState<boolean>(false);
+
+  useEffect(() => {
+    setIconFill(theme === "dark" ? "white" : "#1A1A1A");
+  }, [theme]);
+
+  const getIcon = (iconName: string) => {
+    switch (iconName) {
+      case "briefcase":
+        return <WorkIcon fill={iconFill} />;
+      case "money":
+        return <MoneyIcon fill={iconFill} />;
+      case "pencil":
+        return <SchoolIcon fill={iconFill} />;
+      case "tech":
+        return <TechIcon fill={iconFill} />;
+      case "home":
+        return <HomeIcon fill={iconFill} />;
+      case "health":
+        return <HealthIcon fill={iconFill} />;
+      case "music":
+        return <MusicIcon fill={iconFill} />;
+      case "camera":
+        return <CameraIcon fill={iconFill} />;
+      case "code":
+        return <CodeIcon fill={iconFill} />;
+      case "game":
+        return <GameIcon fill={iconFill} />;
+      case "palette":
+        return <PaletteIcon fill={iconFill} />;
+      default:
+        return <HomeIcon fill={iconFill} />;
+    }
+  };
 
   // Initialize with default buttons
   const [activeButtons, setActiveButtons] = useState<ActiveButton[]>([
@@ -168,18 +188,12 @@ export default function Header({
       tasks: {},
     };
 
-    // Add the new project to the projects array
     setProjects((prevProjects) => [...prevProjects, newProject]);
 
-    // Pass the new project to the parent component
     onAddProject(newProject);
-
-    // Log for debugging
-    console.log("New category saved:", newProject);
   };
   // Get the active project name based on the activeCategory
   const activeProjectName = useMemo(() => {
-    // First check in active buttons
     const activeButton = activeButtons.find(
       (button) => button.id === activeCategory,
     );
@@ -205,24 +219,22 @@ export default function Header({
 
   return (
     <header className="flex items-center justify-between border-gray-300 px-5">
-      {/* Left side menu and buttons remain the same */}
       <div className="relative flex items-center w-[200px]">
         {/* Menu Button */}
         <button
-          className="absolute z-30 w-[45px] h-[45px] flex items-center justify-center rounded-xl bg-gray-200 hover:bg-gray-300 transition-transform duration-500"
+          className="absolute z-30 w-[45px] h-[45px] flex items-center justify-center rounded-xl bg-gray-200 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700 transition-transform duration-500"
           style={{ transform: isOpen ? "rotate(90deg)" : "rotate(0deg)" }}
           onClick={() => setIsOpen(!isOpen)}
         >
-          <MenuIcon />
+          <MenuIcon fill={iconFill} />
         </button>
 
-        {/* Buttons with Sliding Effect - Now Queue-Based */}
         {activeButtons.map((button, index) => (
           <button
             key={button.id}
             className={`absolute z-20 w-[40px] h-[40px] flex items-center justify-center rounded-full 
-              ${activeCategory === button.id ? "bg-blue-200" : "bg-gray-200"} 
-              hover:bg-gray-300 transition-transform duration-500`}
+              ${activeCategory === button.id ? "bg-blue-200 dark:bg-blue-900" : "bg-gray-200 dark:bg-gray-800"} 
+              hover:bg-gray-300 dark:hover:bg-gray-700 transition-transform duration-500`}
             style={{
               transform: isOpen
                 ? `translateX(${(index + 1) * 50}px)`
@@ -231,30 +243,30 @@ export default function Header({
             title={`${button.name} Tasks`}
             onClick={() => handleCategoryClick(button.id)}
           >
-            {iconMap[button.icon]}
+            {getIcon(button.icon)}
           </button>
         ))}
 
         <button
-          className={`absolute z-20 w-[40px] h-[40px] flex items-center justify-center rounded-full bg-gray-200 hover:bg-gray-300 transition-transform duration-500`}
+          className={`absolute z-20 w-[40px] h-[40px] flex items-center justify-center rounded-full bg-gray-200 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700 transition-transform duration-500`}
           style={{
             transform: isOpen ? "translateX(200px)" : "translateX(0px)",
           }}
           title="Add Category"
           onClick={() => setIsAddCategoryModalOpen(true)}
         >
-          <AddIcon className="w-7 h-7" fill="black" />
+          <AddIcon className="w-7 h-7" fill={iconFill} />
         </button>
         <Dropdown>
           <DropdownTrigger>
             <button
-              className={`absolute z-10 w-[40px] h-[40px] flex items-center justify-center rounded-full bg-gray-200 hover:bg-gray-300 transition-transform duration-500`}
+              className={`absolute z-10 w-[40px] h-[40px] flex items-center justify-center rounded-full bg-gray-200 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700 transition-transform duration-500`}
               style={{
                 transform: isOpen ? "translateX(250px)" : "translateX(0px)",
               }}
               title="Options"
             >
-              <OptionsIcon />
+              <OptionsIcon fill={iconFill} />
             </button>
           </DropdownTrigger>
           <DropdownMenu>
@@ -266,7 +278,7 @@ export default function Header({
               >
                 <div className="flex items-center gap-2">
                   <span className="w-5 h-5 flex items-center justify-center">
-                    {iconMap[project.icon]}
+                    {getIcon(project.icon)}
                   </span>
                   <p>{project.project}</p>
                 </div>
@@ -276,35 +288,40 @@ export default function Header({
         </Dropdown>
       </div>
 
-      {/* Center: Clock with format toggle button */}
       <div className="flex-1 flex justify-left pl-32 items-center">
-        {/* Format toggle button */}
         <button
           aria-label={
             is24Hour ? "Switch to 12-hour format" : "Switch to 24-hour format"
           }
-          className="mr-2 transition-transform hover:scale-110 active:scale-95"
+          className="mr-2 transition-transform hover:scale-110 active:scale-95 bg-gray-200 dark:bg-gray-800 p-2 rounded-full"
           title={
             is24Hour ? "Switch to 12-hour format" : "Switch to 24-hour format"
           }
           onClick={() => setIs24Hour(!is24Hour)}
         >
-          {is24Hour ? <Clock12Icon /> : <Clock24Icon />}
+          {is24Hour ? (
+            <Clock24Icon fill={iconFill} />
+          ) : (
+            <Clock12Icon fill={iconFill} />
+          )}
         </button>
         <Clock is24Hour={is24Hour} />
+        <div className="ml-4">
+          <ThemeToggle />
+        </div>
 
-        {/* Project Title Display */}
         <div className="flex-1 flex justify-center">
-          <div className="bg-gray-100 px-4 py-2 rounded-lg shadow-sm">
-            <h2 className="text-lg font-semibold text-gray-800">
+          <div className="bg-gray-100 dark:bg-gray-800 px-4 py-2 rounded-lg shadow-sm">
+            <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200">
               Project:{" "}
-              <span className="text-blue-600">{activeProjectName}</span>
+              <span className="text-blue-600 dark:text-blue-400">
+                {activeProjectName}
+              </span>
             </h2>
           </div>
         </div>
       </div>
 
-      {/* Right Side: Dropdown */}
       <div className="ml-auto">
         <DropdownComponent />
       </div>

@@ -35,7 +35,7 @@ export function TaskCard({
     else if (color === "bg-orange-400") priority = "medium";
     else if (color === "bg-red-600") priority = "high";
     else if (color === "bg-gray-500") priority = "no priority";
-    else priority = "no priority"; // Default to no priority for any other color
+    else priority = "no priority";
 
     e.dataTransfer.setData(
       "application/json",
@@ -44,7 +44,7 @@ export function TaskCard({
         title: taskTitle,
         details: taskDetails,
         color,
-        priority, // Use the determined priority
+        priority,
       }),
     );
     e.dataTransfer.effectAllowed = "move";
@@ -54,7 +54,7 @@ export function TaskCard({
     <div className={`py-1 px-2 ${className}`}>
       <div
         draggable
-        className={`group flex w-full border-2 border-gray-300 shadow-md rounded-sm cursor-move transition-transform duration-200 hover:scale-105 hover:-translate-y-0.5`}
+        className={`group flex w-full border-2 border-gray-300 dark:border-gray-700 shadow-md rounded-sm cursor-move transition-transform duration-200 hover:scale-105 hover:-translate-y-0.5 bg-white dark:bg-gray-800`}
         style={{ width, height }}
         onDragStart={handleDragStart}
       >
@@ -63,12 +63,12 @@ export function TaskCard({
           className={`flex-col flex justify-center px-2 py-1.5 ${taskWrapper}`}
         >
           <span
-            className={`text-[14px] text-gray-800  group-hover:text-gray-900 ${taskTitleClassName}`}
+            className={`text-[14px] text-gray-800 dark:text-gray-200 group-hover:text-gray-900 dark:group-hover:text-white ${taskTitleClassName}`}
           >
             {taskTitle}
           </span>
           <p
-            className={`text-[12px] text-gray-900 w-full ${taskDetailsClassName}`}
+            className={`text-[12px] text-gray-900 dark:text-gray-300 w-full ${taskDetailsClassName}`}
           >
             {taskDetails}
           </p>

@@ -2,7 +2,8 @@
 
 import type React from "react";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useTheme } from "next-themes";
 
 import { SubmitIcon } from "./icons";
 import { inter } from "./fonts";
@@ -18,30 +19,39 @@ interface InputBarProps {
 
 export default function InputBar({ onAddTask }: InputBarProps) {
   const [inputValue, setInputValue] = useState("");
+  const { theme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setInputValue(event.target.value);
   };
 
   const handleSubmit = () => {
-    if (!inputValue.trim()) return; // Prevent empty input
+    if (!inputValue.trim()) return;
 
     const newTask = {
       title: inputValue,
       details: "...",
-      color: "bg-gray-500", // Use black color for "no priority"
-      priority: "no priority", // Keep the "no priority" option
+      color: "bg-gray-500",
+      priority: "no priority",
     };
 
-    onAddTask(newTask); // Call the function passed from BorderBox
+    onAddTask(newTask);
 
-    setInputValue(""); // Clear input after adding task
+    setInputValue("");
   };
+
+  // Determine the fill color based on the theme
+  const iconFill = mounted && theme === "dark" ? "white" : "black";
 
   return (
     <div className="flex items-center gap-1">
       <input
-        className={`${inter.className} w-[267px] h-[45px] border border-gray-600 pl-5 py-2 rounded-full`}
+        className={`${inter.className} w-[267px] h-[45px] border border-gray-600 dark:border-gray-500 pl-5 py-2 rounded-full bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100`}
         placeholder="Enter text here"
         type="text"
         value={inputValue}
@@ -51,7 +61,7 @@ export default function InputBar({ onAddTask }: InputBarProps) {
         className="w-8 h-9 flex items-center justify-center rounded-full hover:-rotate-45 transition-transform duration-500"
         onClick={handleSubmit}
       >
-        <SubmitIcon />
+        <SubmitIcon fill={iconFill} />
       </button>
     </div>
   );
