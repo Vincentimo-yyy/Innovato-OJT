@@ -5,6 +5,7 @@ import type { Task } from "./borderbox";
 
 import { useState, useEffect, useRef } from "react";
 import { useDisclosure } from "@heroui/react";
+import { format } from "date-fns";
 
 import { ScheduledTaskList } from "./scheduled-task-list";
 import { TaskFormModal, type TaskTimeData } from "./task-form-modal";
@@ -56,11 +57,23 @@ export default function BorderlessBox({
   onRetractTask,
   onEditTask,
 }: BorderlessBoxProps) {
-  const days = [
-    { day: "MON", date: "24" },
-    { day: "TUES", date: "25" },
-    { day: "WED", date: "26" },
-  ];
+  //dynamic dates
+  const days = (() => {
+    const today = new Date();
+    const dayNames = ["SUN", "MON", "TUES", "WED", "THUR", "FRI", "SAT"];
+
+    return Array.from({ length: 3 }, (_, i) => {
+      const date = new Date(today);
+
+      date.setDate(today.getDate() + i);
+
+      return {
+        day: dayNames[date.getDay()],
+        date: date.getDate().toString(),
+        fullDate: format(date, "MMMM d, yyyy"),
+      };
+    });
+  })();
 
   const [dropError, setDropError] = useState<{
     day: string;
@@ -372,7 +385,7 @@ export default function BorderlessBox({
       />
 
       <div className="grid grid-cols-3 divide-x divide-gray-300 dark:divide-gray-700">
-        {days.map(({ day, date }) => (
+        {days.map(({ day, date, fullDate }) => (
           <div key={date} className="flex flex-col">
             <h2 className="text-center text-[18px] dark:text-gray-200">
               {day}
