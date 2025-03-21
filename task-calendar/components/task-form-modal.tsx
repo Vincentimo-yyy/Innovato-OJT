@@ -1,38 +1,48 @@
-"use client"
-import { useState, useEffect } from "react"
-import { Modal, ModalContent, ModalBody, Textarea, Select, SelectItem, Input, TimeInput } from "@heroui/react"
-import { Time } from "@internationalized/date"
-import { format, parse } from "date-fns"
-import { useTheme } from "next-themes"
+/* eslint-disable @typescript-eslint/no-unused-vars */
+"use client";
+import { useState, useEffect } from "react";
+import {
+  Modal,
+  ModalContent,
+  ModalBody,
+  Textarea,
+  Select,
+  SelectItem,
+  Input,
+  TimeInput,
+} from "@heroui/react";
+import { Time } from "@internationalized/date";
+import { format, parse } from "date-fns";
+import { useTheme } from "next-themes";
 
-import { SubmitIcon } from "./icons"
-import { taskTypes } from "./borderbox"
+import { SubmitIcon } from "./icons";
+import { taskTypes } from "./borderbox";
 
 export interface TaskTimeData {
-  id?: string
-  startHour?: number
-  endHour?: number
-  day?: string // This will now store the full date in "MMMM d, yyyy" format
+  id?: string;
+  startHour?: number;
+  endHour?: number;
+  day?: string;
 }
 
 interface TaskFormModalProps {
-  isOpen: boolean
-  onOpenChange: () => void
+  isOpen: boolean;
+  onOpenChange: () => void;
   onSubmit: (taskData: {
-    title: string
-    details: string
-    priority: string
-    color: string
-    startHour?: number
-    endHour?: number
-    day?: string
-  }) => void
-  timeEditData?: TaskTimeData | null
+    title: string;
+    details: string;
+    priority: string;
+    color: string;
+    startHour?: number;
+    endHour?: number;
+    day?: string;
+  }) => void;
+  timeEditData?: TaskTimeData | null;
   initialValues?: {
-    title?: string
-    details?: string
-    priority?: string
-  }
+    title?: string;
+    details?: string;
+    priority?: string;
+  };
 }
 
 export function TaskFormModal({
@@ -42,125 +52,146 @@ export function TaskFormModal({
   timeEditData = null,
   initialValues = {},
 }: TaskFormModalProps) {
-  const [taskDetails, setTaskDetails] = useState(initialValues.details || "")
-  const [taskTitle, setTaskTitle] = useState(initialValues.title || "")
-  const [taskPriority, setTaskPriority] = useState(initialValues.priority || taskTypes[0].key)
-  const { theme } = useTheme()
-  const [mounted, setMounted] = useState(false)
+  const [taskDetails, setTaskDetails] = useState(initialValues.details || "");
+  const [taskTitle, setTaskTitle] = useState(initialValues.title || "");
+  const [taskPriority, setTaskPriority] = useState(
+    initialValues.priority || taskTypes[0].key,
+  );
+  const { theme } = useTheme();
+  const [mounted, setMounted] = useState(false);
 
   // Add state for time values
-  const [startTime, setStartTime] = useState<Time | null>(null)
-  const [endTime, setEndTime] = useState<Time | null>(null)
+  const [startTime, setStartTime] = useState<Time | null>(null);
+  const [endTime, setEndTime] = useState<Time | null>(null);
 
-  const now = new Date()
-  const today = format(now, "MMMM d, yyyy")
-  const [selectedDate, setSelectedDate] = useState<Date | null>(null)
-  const [day, setDay] = useState(timeEditData?.day || today)
+  const now = new Date();
+  const today = format(now, "MMMM d, yyyy");
+  const [, setSelectedDate] = useState<Date | null>(null);
+  const [day, setDay] = useState(timeEditData?.day || today);
 
   // Avoid hydration mismatch by only rendering after mount
   useEffect(() => {
-    setMounted(true)
-  }, [])
+    setMounted(true);
+  }, []);
 
   // Reset form when modal opens with new data
   useEffect(() => {
     if (isOpen) {
-      setTaskTitle(initialValues?.title || "")
-      setTaskDetails(initialValues?.details || "")
-      setTaskPriority(initialValues?.priority || taskTypes[0].key)
+      setTaskTitle(initialValues?.title || "");
+      setTaskDetails(initialValues?.details || "");
+      setTaskPriority(initialValues?.priority || taskTypes[0].key);
 
       if (timeEditData) {
-        setDay(timeEditData.day || today)
+        setDay(timeEditData.day || today);
 
         // Parse the date string to a Date object if it exists
         if (timeEditData.day) {
           try {
-            const parsedDate = parse(timeEditData.day, "MMMM d, yyyy", new Date())
-            setSelectedDate(parsedDate)
+            const parsedDate = parse(
+              timeEditData.day,
+              "MMMM d, yyyy",
+              new Date(),
+            );
+
+            setSelectedDate(parsedDate);
           } catch (error) {
-            setSelectedDate(new Date())
+            setSelectedDate(new Date());
           }
         } else {
-          setSelectedDate(new Date())
+          setSelectedDate(new Date());
         }
 
         if (timeEditData.startHour !== undefined) {
-          const startHourWhole = Math.floor(timeEditData.startHour)
-          const startMinutes = Math.round((timeEditData.startHour - startHourWhole) * 60)
+          const startHourWhole = Math.floor(timeEditData.startHour);
+          const startMinutes = Math.round(
+            (timeEditData.startHour - startHourWhole) * 60,
+          );
 
-          setStartTime(new Time(startHourWhole, startMinutes))
+          setStartTime(new Time(startHourWhole, startMinutes));
         }
 
         if (timeEditData.endHour !== undefined) {
-          const endHourWhole = Math.floor(timeEditData.endHour)
-          const endMinutes = Math.round((timeEditData.endHour - endHourWhole) * 60)
+          const endHourWhole = Math.floor(timeEditData.endHour);
+          const endMinutes = Math.round(
+            (timeEditData.endHour - endHourWhole) * 60,
+          );
 
-          setEndTime(new Time(endHourWhole, endMinutes))
+          setEndTime(new Time(endHourWhole, endMinutes));
         }
       }
     }
-  }, [isOpen])
+  }, [isOpen]);
 
   useEffect(() => {
     if (isOpen && initialValues) {
       if (initialValues.title !== undefined) {
-        setTaskTitle(initialValues.title)
+        setTaskTitle(initialValues.title);
       }
       if (initialValues.details !== undefined) {
-        setTaskDetails(initialValues.details)
+        setTaskDetails(initialValues.details);
       }
       if (initialValues.priority !== undefined) {
-        setTaskPriority(initialValues.priority)
+        setTaskPriority(initialValues.priority);
       }
     }
-  }, [isOpen, initialValues])
+  }, [isOpen, initialValues]);
 
   useEffect(() => {
     if (isOpen && timeEditData) {
-      setDay(timeEditData.day || today)
+      setDay(timeEditData.day || today);
 
       // Parse the date string to a Date object if it exists
       if (timeEditData.day) {
         try {
-          const parsedDate = parse(timeEditData.day, "MMMM d, yyyy", new Date())
-          setSelectedDate(parsedDate)
+          const parsedDate = parse(
+            timeEditData.day,
+            "MMMM d, yyyy",
+            new Date(),
+          );
+
+          setSelectedDate(parsedDate);
         } catch (error) {
-          setSelectedDate(new Date())
+          setSelectedDate(new Date());
         }
       } else {
-        setSelectedDate(new Date())
+        setSelectedDate(new Date());
       }
 
       if (timeEditData.startHour !== undefined) {
-        const startHourWhole = Math.floor(timeEditData.startHour)
-        const startMinutes = Math.round((timeEditData.startHour - startHourWhole) * 60)
+        const startHourWhole = Math.floor(timeEditData.startHour);
+        const startMinutes = Math.round(
+          (timeEditData.startHour - startHourWhole) * 60,
+        );
 
-        setStartTime(new Time(startHourWhole, startMinutes))
+        setStartTime(new Time(startHourWhole, startMinutes));
       }
 
       if (timeEditData.endHour !== undefined) {
-        const endHourWhole = Math.floor(timeEditData.endHour)
-        const endMinutes = Math.round((timeEditData.endHour - endHourWhole) * 60)
+        const endHourWhole = Math.floor(timeEditData.endHour);
+        const endMinutes = Math.round(
+          (timeEditData.endHour - endHourWhole) * 60,
+        );
 
-        setEndTime(new Time(endHourWhole, endMinutes))
+        setEndTime(new Time(endHourWhole, endMinutes));
       }
     }
-  }, [isOpen, timeEditData, today])
+  }, [isOpen, timeEditData, today]);
 
   const handleSubmit = () => {
-    if (!taskTitle.trim()) return
+    if (!taskTitle.trim()) return;
 
-    const taskType = taskTypes.find((t) => t.key === taskPriority) || taskTypes[0]
+    const taskType =
+      taskTypes.find((t) => t.key === taskPriority) || taskTypes[0];
 
-    let startHour: number | undefined = undefined
-    let endHour: number | undefined = undefined
+    let startHour: number | undefined = undefined;
+    let endHour: number | undefined = undefined;
 
     if (startTime) {
-      startHour = startTime.hour + startTime.minute / 60
+      startHour = startTime.hour + startTime.minute / 60;
     }
 
     if (endTime) {
-      endHour = endTime.hour + endTime.minute / 60
+      endHour = endTime.hour + endTime.minute / 60;
     }
 
     onSubmit({
@@ -171,26 +202,31 @@ export function TaskFormModal({
       startHour: timeEditData?.startHour !== undefined ? startHour : undefined,
       endHour: timeEditData?.endHour !== undefined ? endHour : undefined,
       day: timeEditData?.day !== undefined ? day : undefined,
-    })
+    });
 
-    setTaskTitle("")
-    setTaskDetails("")
-    setTaskPriority(taskTypes[0].key)
-    setStartTime(null)
-    setEndTime(null)
-    setSelectedDate(null)
-  }
+    setTaskTitle("");
+    setTaskDetails("");
+    setTaskPriority(taskTypes[0].key);
+    setStartTime(null);
+    setEndTime(null);
+    setSelectedDate(null);
+  };
 
   // Convert hour number to Time object for TimeInput
   const hourToTimeObject = (hour: number) => {
-    const hours = Math.floor(hour)
-    const minutes = Math.round((hour - hours) * 60)
+    const hours = Math.floor(hour);
+    const minutes = Math.round((hour - hours) * 60);
 
-    return new Time(hours, minutes)
-  }
+    return new Time(hours, minutes);
+  };
 
   return (
-    <Modal isOpen={isOpen} placement="top-center" size="xl" onOpenChange={onOpenChange}>
+    <Modal
+      isOpen={isOpen}
+      placement="top-center"
+      size="xl"
+      onOpenChange={onOpenChange}
+    >
       <ModalContent>
         <ModalBody>
           <div className="flex w-[145px] flex-wrap ">
@@ -212,7 +248,7 @@ export function TaskFormModal({
             type="text"
             value={taskTitle}
             onChange={(e) => {
-              setTaskTitle(e.target.value)
+              setTaskTitle(e.target.value);
             }}
           />
           <Textarea
@@ -221,7 +257,7 @@ export function TaskFormModal({
             placeholder="Enter task description"
             value={taskDetails}
             onChange={(e) => {
-              setTaskDetails(e.target.value)
+              setTaskDetails(e.target.value);
             }}
           />
           <div className="flex flex-col space-y-4">
@@ -241,7 +277,11 @@ export function TaskFormModal({
               <div className="flex items-center space-x-2">
                 <TimeInput
                   className="w-[100px] h-[50px]"
-                  defaultValue={timeEditData?.startHour ? hourToTimeObject(timeEditData.startHour) : new Time(9, 0)}
+                  defaultValue={
+                    timeEditData?.startHour
+                      ? hourToTimeObject(timeEditData.startHour)
+                      : new Time(9, 0)
+                  }
                   hourCycle={12}
                   label="Start Time"
                   size="sm"
@@ -250,7 +290,11 @@ export function TaskFormModal({
                 <p>-</p>
                 <TimeInput
                   className="w-[100px] h-[50px]"
-                  defaultValue={timeEditData?.endHour ? hourToTimeObject(timeEditData.endHour) : new Time(10, 0)}
+                  defaultValue={
+                    timeEditData?.endHour
+                      ? hourToTimeObject(timeEditData.endHour)
+                      : new Time(10, 0)
+                  }
                   hourCycle={12}
                   label="End Time"
                   size="sm"
@@ -262,12 +306,15 @@ export function TaskFormModal({
               className="ml-auto w-[25px] h-[25px] rounded-full flex items-center hover:-rotate-45 transition-transform duration-500"
               onClick={handleSubmit}
             >
-              <SubmitIcon fill={mounted && theme === "dark" ? "white" : "black"} height="25" width="25" />
+              <SubmitIcon
+                fill={mounted && theme === "dark" ? "white" : "black"}
+                height="25"
+                width="25"
+              />
             </button>
           </div>
         </ModalBody>
       </ModalContent>
     </Modal>
-  )
+  );
 }
-

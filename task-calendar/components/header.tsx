@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
@@ -39,7 +38,7 @@ export type TaskCategory = "home" | "school" | "work" | string;
 export interface Project {
   project: string;
   icon: string;
-  tasks: Record<string, string>; // { task_1: name, task_2: name }
+  tasks: Record<string, string>;
 }
 
 // Define the active button interface
@@ -49,11 +48,15 @@ interface ActiveButton {
   icon: string;
 }
 
+// interface for day range options
+type DayRangeOption = "1 Day" | "3 Days" | "1 Week";
+
 interface HeaderProps {
   activeCategory: TaskCategory;
   onCategoryChange: (category: TaskCategory) => void;
   onAddProject: (project: Project) => void;
   initialProjects?: Project[];
+  onDayRangeChange?: (range: DayRangeOption) => void;
 }
 
 export default function Header({
@@ -61,12 +64,15 @@ export default function Header({
   onCategoryChange,
   onAddProject,
   initialProjects = [],
+  onDayRangeChange,
 }: HeaderProps) {
   const [iconFill, setIconFill] = useState<string>("#1A1A1A");
   const { theme } = useTheme();
   const [isOpen, setIsOpen] = useState(false);
   const [isAddCategoryModalOpen, setIsAddCategoryModalOpen] = useState(false);
   const [is24Hour, setIs24Hour] = useState<boolean>(false);
+  const [selectedDayRange, setSelectedDayRange] =
+    useState<DayRangeOption>("3 Days");
 
   useEffect(() => {
     setIconFill(theme === "dark" ? "white" : "#1A1A1A");
@@ -217,6 +223,14 @@ export default function Header({
     return activeCategory.charAt(0).toUpperCase() + activeCategory.slice(1);
   }, [activeCategory, activeButtons, projects]);
 
+  // Add handler for day range selection
+  const handleDayRangeChange = (range: DayRangeOption) => {
+    setSelectedDayRange(range);
+    if (onDayRangeChange) {
+      onDayRangeChange(range);
+    }
+  };
+
   return (
     <header className="flex items-center justify-between border-gray-300 px-5">
       <div className="relative flex items-center w-[200px]">
@@ -320,6 +334,54 @@ export default function Header({
             </h2>
           </div>
         </div>
+      </div>
+
+      {/* Day range selection dropdown */}
+      <div className="mr-16">
+        <Dropdown>
+          <DropdownTrigger>
+            <button className="bg-gray-100 dark:bg-gray-800 px-4 py-2 rounded-lg shadow-sm hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
+              <div className="text-lg font-semibold text-gray-800 dark:text-gray-200 flex items-center">
+                {selectedDayRange} <span className="ml-2">▼</span>
+              </div>
+            </button>
+          </DropdownTrigger>
+          <DropdownMenu aria-label="Day Range Options">
+            <DropdownItem
+              key="1day"
+              className={
+                selectedDayRange === "1 Day"
+                  ? "text-blue-600 dark:text-blue-400 font-medium"
+                  : ""
+              }
+              onPress={() => handleDayRangeChange("1 Day")}
+            >
+              1 Day
+            </DropdownItem>
+            <DropdownItem
+              key="3days"
+              className={
+                selectedDayRange === "3 Days"
+                  ? "text-blue-600 dark:text-blue-400 font-medium"
+                  : ""
+              }
+              onPress={() => handleDayRangeChange("3 Days")}
+            >
+              3 Days
+            </DropdownItem>
+            <DropdownItem
+              key="1week"
+              className={
+                selectedDayRange === "1 Week"
+                  ? "text-blue-600 dark:text-blue-400 font-medium"
+                  : ""
+              }
+              onPress={() => handleDayRangeChange("1 Week")}
+            >
+              1 Week
+            </DropdownItem>
+          </DropdownMenu>
+        </Dropdown>
       </div>
 
       <div className="ml-auto">
