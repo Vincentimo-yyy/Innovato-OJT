@@ -1,26 +1,26 @@
-"use client";
-import { useState, useEffect, useRef, useCallback } from "react";
+"use client"
+import { useState, useEffect, useRef, useCallback } from "react"
 
-import BorderBox, { type Task } from "@/components/borderbox";
-import Header, { type TaskCategory, type Project } from "@/components/header";
-import BorderlessBox from "@/components/time-table";
-import InputBar from "@/components/inputbar";
+import BorderBox, { type Task } from "@/components/borderbox"
+import Header, { type TaskCategory, type Project } from "@/components/header"
+import BorderlessBox from "@/components/time-table"
+import InputBar from "@/components/inputbar"
 
 export interface TaskWithSchedule extends Task {
-  isScheduled: boolean;
-  category: TaskCategory;
-  day?: string;
-  startHour?: number;
-  endHour?: number;
+  isScheduled: boolean
+  category: TaskCategory
+  day?: string // Now stores full date in "MMMM d, yyyy" format
+  startHour?: number
+  endHour?: number
 }
 
 interface TimetableTask {
-  taskId: string;
-  category: TaskCategory;
-  day: string;
-  startHour: number;
-  endHour: number;
-  task: Task;
+  taskId: string
+  category: TaskCategory
+  day: string // Now stores full date in "MMMM d, yyyy" format
+  startHour: number
+  endHour: number
+  task: Task
 }
 
 const initialCategoryTasksData: Record<TaskCategory, TaskWithSchedule[]> = {
@@ -113,7 +113,7 @@ const initialCategoryTasksData: Record<TaskCategory, TaskWithSchedule[]> = {
   ],
   tech: [],
   music: [],
-};
+}
 
 // Initial projects for dropdown
 const initialProjects: Project[] = [
@@ -127,64 +127,55 @@ const initialProjects: Project[] = [
     icon: "music",
     tasks: {},
   },
-];
+]
 
 export default function LandingPage() {
-  const [activeCategory, setActiveCategory] = useState<TaskCategory>("home");
+  const [activeCategory, setActiveCategory] = useState<TaskCategory>("home")
 
-  const [allTasksData, setAllTasksData] = useState<
-    Record<TaskCategory, TaskWithSchedule[]>
-  >(JSON.parse(JSON.stringify(initialCategoryTasksData)));
+  const [allTasksData, setAllTasksData] = useState<Record<TaskCategory, TaskWithSchedule[]>>(
+    JSON.parse(JSON.stringify(initialCategoryTasksData)),
+  )
 
-  const [unscheduledTasks, setUnscheduledTasks] = useState<TaskWithSchedule[]>(
-    [],
-  );
+  const [unscheduledTasks, setUnscheduledTasks] = useState<TaskWithSchedule[]>([])
 
-  const [timetableTasks, setTimetableTasks] = useState<TimetableTask[]>([]);
+  const [timetableTasks, setTimetableTasks] = useState<TimetableTask[]>([])
 
-  const [taskIdCounter, setTaskIdCounter] = useState(4);
+  const [taskIdCounter, setTaskIdCounter] = useState(4)
 
   // State for projects - initialize once and don't reset on every render
-  const [projects, setProjects] = useState<Project[]>(initialProjects);
+  const [projects, setProjects] = useState<Project[]>(initialProjects)
 
   // Add a ref to access the BorderBox component's methods
   const borderBoxRef = useRef<{
-    openModalWithTimeEdit: (taskData?: any) => void;
-  } | null>(null);
+    openModalWithTimeEdit: (taskData?: any) => void
+  } | null>(null)
 
   // Use useCallback for handlers to prevent recreation on every render
   const handleCategoryChange = useCallback((category: TaskCategory) => {
-    setActiveCategory(category);
-  }, []);
+    setActiveCategory(category)
+  }, [])
 
   // Handle adding a new project from Header
   const handleAddProject = useCallback((project: Project) => {
-    setProjects((prev) => [...prev, project]);
+    setProjects((prev) => [...prev, project])
 
-    const projectId = project.project.toLowerCase().replace(/\s+/g, "-");
+    const projectId = project.project.toLowerCase().replace(/\s+/g, "-")
 
     setAllTasksData((prev) => ({
       ...prev,
       [projectId]: [],
-    }));
-  }, []);
+    }))
+  }, [])
 
   // Update unscheduled tasks and timetable tasks when activeCategory or allTasksData changes
   useEffect(() => {
-    setUnscheduledTasks(
-      allTasksData[activeCategory]?.filter((task) => !task.isScheduled) || [],
-    );
+    setUnscheduledTasks(allTasksData[activeCategory]?.filter((task) => !task.isScheduled) || [])
 
-    const scheduledTasks: TimetableTask[] = [];
+    const scheduledTasks: TimetableTask[] = []
 
     Object.entries(allTasksData).forEach(([, tasks]) => {
       tasks.forEach((task) => {
-        if (
-          task.isScheduled &&
-          task.day &&
-          task.startHour !== undefined &&
-          task.endHour !== undefined
-        ) {
+        if (task.isScheduled && task.day && task.startHour !== undefined && task.endHour !== undefined) {
           scheduledTasks.push({
             taskId: task.id,
             category: task.category,
@@ -198,48 +189,46 @@ export default function LandingPage() {
               priority: task.priority,
               color: task.color,
             },
-          });
+          })
         }
-      });
-    });
+      })
+    })
 
-    setTimetableTasks(scheduledTasks);
-  }, [activeCategory, allTasksData]);
+    setTimetableTasks(scheduledTasks)
+  }, [activeCategory, allTasksData])
 
   const generateTaskId = useCallback(() => {
-    const newId = `${activeCategory}-task-${Date.now()}-${taskIdCounter}`;
+    const newId = `${activeCategory}-task-${Date.now()}-${taskIdCounter}`
 
-    setTaskIdCounter((prev) => prev + 1);
+    setTaskIdCounter((prev) => prev + 1)
 
-    return newId;
-  }, [activeCategory, taskIdCounter]);
+    return newId
+  }, [activeCategory, taskIdCounter])
 
   // Add a function to handle task editing
   const handleEditTask = useCallback(
     (taskData: {
-      id: string;
-      startHour: number;
-      endHour: number;
-      day: string;
-      task?: Task;
+      id: string
+      startHour: number
+      endHour: number
+      day: string
+      task?: Task
     }) => {
       if (taskData.task) {
-        let taskCategory: TaskCategory | null = null;
+        let taskCategory: TaskCategory | null = null
 
         setAllTasksData((prev) => {
           Object.entries(prev).forEach(([category, tasks]) => {
             if (tasks.some((t) => t.id === taskData.id)) {
-              taskCategory = category as TaskCategory;
+              taskCategory = category as TaskCategory
             }
-          });
+          })
 
-          if (!taskCategory) return prev;
+          if (!taskCategory) return prev
 
-          const newData = { ...prev };
-          const categoryTasks = [...newData[taskCategory]];
-          const taskIndex = categoryTasks.findIndex(
-            (t) => t.id === taskData.id,
-          );
+          const newData = { ...prev }
+          const categoryTasks = [...newData[taskCategory]]
+          const taskIndex = categoryTasks.findIndex((t) => t.id === taskData.id)
 
           if (taskIndex !== -1) {
             categoryTasks[taskIndex] = {
@@ -251,45 +240,45 @@ export default function LandingPage() {
               day: taskData.day,
               startHour: taskData.startHour,
               endHour: taskData.endHour,
-            };
+            }
 
-            newData[taskCategory] = categoryTasks;
+            newData[taskCategory] = categoryTasks
           }
 
-          return newData;
-        });
+          return newData
+        })
 
-        return;
+        return
       }
 
       if (borderBoxRef.current) {
-        borderBoxRef.current.openModalWithTimeEdit(taskData);
+        borderBoxRef.current.openModalWithTimeEdit(taskData)
       }
     },
     [],
-  );
+  )
 
   // Function for Add a task
   const handleAddTask = useCallback(
     (taskData: Omit<Task, "id">) => {
-      const newId = generateTaskId();
+      const newId = generateTaskId()
 
       const newTask: TaskWithSchedule = {
         id: newId,
         ...taskData,
         isScheduled: false,
         category: activeCategory,
-      };
+      }
 
-      setUnscheduledTasks((prev) => [...prev, newTask]);
+      setUnscheduledTasks((prev) => [...prev, newTask])
 
       setAllTasksData((prev) => ({
         ...prev,
         [activeCategory]: [...(prev[activeCategory] || []), newTask],
-      }));
+      }))
     },
     [activeCategory, generateTaskId],
-  );
+  )
 
   // Delete tasks
   const handleDeleteTasks = useCallback(
@@ -298,22 +287,21 @@ export default function LandingPage() {
         ...task,
         isScheduled: false,
         category: activeCategory,
-      })) as TaskWithSchedule[];
+      })) as TaskWithSchedule[]
 
-      setUnscheduledTasks(convertedTasks);
+      setUnscheduledTasks(convertedTasks)
 
       setAllTasksData((prev) => {
-        const scheduledTasks =
-          prev[activeCategory]?.filter((task) => task.isScheduled) || [];
+        const scheduledTasks = prev[activeCategory]?.filter((task) => task.isScheduled) || []
 
         return {
           ...prev,
           [activeCategory]: [...convertedTasks, ...scheduledTasks],
-        };
-      });
+        }
+      })
     },
     [activeCategory],
-  );
+  )
 
   // Handle dropping a task on the timetable
   const handleTaskDrop = useCallback(
@@ -323,16 +311,14 @@ export default function LandingPage() {
       startHour: number,
       endHour: number,
       taskData?: {
-        title: string;
-        details: string;
-        priority: string;
-        color: string;
+        title: string
+        details: string
+        priority: string
+        color: string
       },
     ) => {
       setTimetableTasks((prevTimetableTasks) => {
-        const existingTask = prevTimetableTasks.find(
-          (tt) => tt.taskId === taskId,
-        );
+        const existingTask = prevTimetableTasks.find((tt) => tt.taskId === taskId)
 
         // Time slot lock
         const isTimeSlotOccupied = prevTimetableTasks.some(
@@ -342,19 +328,19 @@ export default function LandingPage() {
             ((task.startHour <= startHour && task.endHour > startHour) ||
               (task.startHour < endHour && task.endHour >= endHour) ||
               (task.startHour >= startHour && task.endHour <= endHour)),
-        );
+        )
 
         if (isTimeSlotOccupied) {
-          return prevTimetableTasks;
+          return prevTimetableTasks
         }
 
         if (existingTask) {
           // Ability to move task that are scheduled
           setAllTasksData((prev) => {
-            const newData = { ...prev };
+            const newData = { ...prev }
 
-            const categoryTasks = [...newData[existingTask.category]];
-            const taskIndex = categoryTasks.findIndex((t) => t.id === taskId);
+            const categoryTasks = [...newData[existingTask.category]]
+            const taskIndex = categoryTasks.findIndex((t) => t.id === taskId)
 
             if (taskIndex !== -1) {
               categoryTasks[taskIndex] = {
@@ -368,33 +354,33 @@ export default function LandingPage() {
                   priority: taskData.priority,
                   color: taskData.color,
                 }),
-              };
+              }
 
-              newData[existingTask.category] = categoryTasks;
+              newData[existingTask.category] = categoryTasks
             }
 
-            return newData;
-          });
+            return newData
+          })
         } else {
           setAllTasksData((prev) => {
-            let taskCategory: TaskCategory | null = null;
-            let taskToSchedule: TaskWithSchedule | null = null;
+            let taskCategory: TaskCategory | null = null
+            let taskToSchedule: TaskWithSchedule | null = null
 
             // Find the task and its category
             Object.entries(prev).forEach(([category, tasks]) => {
-              const task = tasks.find((t) => t.id === taskId);
+              const task = tasks.find((t) => t.id === taskId)
 
               if (task) {
-                taskCategory = category as TaskCategory;
-                taskToSchedule = task;
+                taskCategory = category as TaskCategory
+                taskToSchedule = task
               }
-            });
+            })
 
-            if (!taskCategory || !taskToSchedule) return prev;
+            if (!taskCategory || !taskToSchedule) return prev
 
-            const newData = { ...prev };
-            const categoryTasks = [...newData[taskCategory]];
-            const taskIndex = categoryTasks.findIndex((t) => t.id === taskId);
+            const newData = { ...prev }
+            const categoryTasks = [...newData[taskCategory]]
+            const taskIndex = categoryTasks.findIndex((t) => t.id === taskId)
 
             if (taskIndex !== -1) {
               categoryTasks[taskIndex] = {
@@ -409,88 +395,85 @@ export default function LandingPage() {
                   priority: taskData.priority,
                   color: taskData.color,
                 }),
-              };
+              }
 
-              newData[taskCategory] = categoryTasks;
+              newData[taskCategory] = categoryTasks
             }
 
-            return newData;
-          });
+            return newData
+          })
 
           // Find the task category outside the setAllTasksData callback
-          let foundTaskCategory: TaskCategory | null = null;
+          let foundTaskCategory: TaskCategory | null = null
 
           // Find which category the task belongs to
           Object.entries(allTasksData).forEach(([category, tasks]) => {
             if (tasks.some((t) => t.id === taskId)) {
-              foundTaskCategory = category as TaskCategory;
+              foundTaskCategory = category as TaskCategory
             }
-          });
+          })
 
           // Handle task box not reloading the category avoiding duping
           if (foundTaskCategory && activeCategory === foundTaskCategory) {
-            setUnscheduledTasks((prev) => prev.filter((t) => t.id !== taskId));
+            setUnscheduledTasks((prev) => prev.filter((t) => t.id !== taskId))
           }
         }
 
-        return prevTimetableTasks;
-      });
+        return prevTimetableTasks
+      })
     },
     [activeCategory, allTasksData],
-  );
+  )
 
   // Handle resizing a task in the timetable
   const handleTaskResize = useCallback(
     (taskId: string, newEndHour: number) => {
-      const task = timetableTasks.find((t) => t.taskId === taskId);
+      const task = timetableTasks.find((t) => t.taskId === taskId)
 
-      if (!task) return;
+      if (!task) return
 
       // Overlap check
       const isOverlapping = timetableTasks.some(
         (t) =>
-          t.taskId !== taskId &&
-          t.day === task.day &&
-          t.startHour < newEndHour &&
-          t.startHour >= task.startHour + 1,
-      );
+          t.taskId !== taskId && t.day === task.day && t.startHour < newEndHour && t.startHour >= task.startHour + 1,
+      )
 
       if (isOverlapping) {
-        return;
+        return
       }
 
       // Update time frame
       setAllTasksData((prev) => {
-        const newData = { ...prev };
-        const categoryTasks = [...newData[task.category]];
-        const taskIndex = categoryTasks.findIndex((t) => t.id === taskId);
+        const newData = { ...prev }
+        const categoryTasks = [...newData[task.category]]
+        const taskIndex = categoryTasks.findIndex((t) => t.id === taskId)
 
         if (taskIndex !== -1) {
           categoryTasks[taskIndex] = {
             ...categoryTasks[taskIndex],
             endHour: Math.max(task.startHour + 1, newEndHour),
-          };
+          }
 
-          newData[task.category] = categoryTasks;
+          newData[task.category] = categoryTasks
         }
 
-        return newData;
-      });
+        return newData
+      })
     },
     [timetableTasks],
-  );
+  )
 
   // Handle returning a task from the timetable to the task list
   const handleReturnTaskToList = useCallback(
     (taskId: string) => {
-      const scheduledTask = timetableTasks.find((tt) => tt.taskId === taskId);
+      const scheduledTask = timetableTasks.find((tt) => tt.taskId === taskId)
 
-      if (!scheduledTask) return;
+      if (!scheduledTask) return
 
       setAllTasksData((prev) => {
-        const newData = { ...prev };
-        const categoryTasks = [...newData[scheduledTask.category]];
-        const taskIndex = categoryTasks.findIndex((t) => t.id === taskId);
+        const newData = { ...prev }
+        const categoryTasks = [...newData[scheduledTask.category]]
+        const taskIndex = categoryTasks.findIndex((t) => t.id === taskId)
 
         if (taskIndex !== -1) {
           categoryTasks[taskIndex] = {
@@ -499,19 +482,19 @@ export default function LandingPage() {
             day: undefined,
             startHour: undefined,
             endHour: undefined,
-          };
+          }
 
-          newData[scheduledTask.category] = categoryTasks;
+          newData[scheduledTask.category] = categoryTasks
         }
 
-        return newData;
-      });
+        return newData
+      })
 
       if (scheduledTask.category === activeCategory) {
       }
     },
     [activeCategory, timetableTasks],
-  );
+  )
 
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100">
@@ -542,5 +525,6 @@ export default function LandingPage() {
         />
       </div>
     </div>
-  );
+  )
 }
+
